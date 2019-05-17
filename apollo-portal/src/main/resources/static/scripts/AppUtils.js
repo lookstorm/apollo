@@ -62,10 +62,10 @@ appUtil.service('AppUtil', ['toastr', '$window', '$q', function (toastr, $window
                 query = query.substring(1, query.length);
             }
 
-            var anchorIndex = query.indexOf('#');
-            if (anchorIndex >= 0) {
-                query = query.substring(0, anchorIndex);
-            }
+            // var anchorIndex = query.indexOf('#');
+            // if (anchorIndex >= 0) {
+            //     query = query.substring(0, anchorIndex);
+            // }
 
             var params = query.split("&");
             var result = {};

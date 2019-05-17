@@ -47,8 +47,8 @@ namespace_module.config(function (valdrProvider) {
                                      'AppNamespace': {
                                          'namespaceName': {
                                              'size': {
-                                                 'max': 32,
-                                                 'message': 'Namespace名称长度不能多于32个字符'
+                                                 'max': 500,
+                                                 'message': 'Namespace名称长度不能多于500个字符'
                                              },
                                              'required': {
                                                  'message': 'Namespace名称不能为空'

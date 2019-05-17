@@ -117,8 +117,8 @@ namespace_module.controller("LinkNamespaceController",
                                      } else {
 
                                          var namespaceNameLength = $scope.concatNamespace().length;
-                                         if (namespaceNameLength > 32) {
-                                             toastr.error("namespace名称不能大于32个字符. 部门前缀"
+                                         if (namespaceNameLength > 500) {
+                                             toastr.error("namespace名称不能大于500个字符. 部门前缀"
                                                           + (namespaceNameLength - $scope.appNamespace.name.length)
                                                           + "个字符, 名称" + $scope.appNamespace.name.length + "个字符"
                                              );

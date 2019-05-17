@@ -1,14 +1,14 @@
 #!/bin/sh
 
 # apollo config db info
-apollo_config_db_url=jdbc:mysql://my18037m.mysql.jddb.com:3358/ApolloConfigDB?characterEncoding=utf8
-apollo_config_db_username=metastore_mys_rw
-apollo_config_db_password=cSVLdCeIRh7qRyMj8tyTURYVIheoYQdf
+apollo_config_db_url=jdbc:mysql://172.16.199.39:3306/ApolloConfigDB?characterEncoding=utf8
+apollo_config_db_username=salt
+apollo_config_db_password=salt
 
 # apollo portal db info
-apollo_portal_db_url=jdbc:mysql://my18037m.mysql.jddb.com:3358/ApolloPortalDB?characterEncoding=utf8
-apollo_portal_db_username=metastore_mys_rw
-apollo_portal_db_password=cSVLdCeIRh7qRyMj8tyTURYVIheoYQdf
+apollo_portal_db_url=jdbc:mysql://172.16.199.39:3306/ApolloPortalDB?characterEncoding=utf8
+apollo_portal_db_username=salt
+apollo_portal_db_password=salt
 
 # meta server url, different environments should have different meta server addresses
 dev_meta=http://t.apollo-meta.jd.com

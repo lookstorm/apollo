@@ -90,9 +90,9 @@ function directive($window, toastr, AppUtil, EventManager, PermissionService, Na
                 namespace.isLinkedNamespace =
                     namespace.isPublic ? namespace.parentAppId != namespace.baseInfo.appId : false;
                 //namespace view name hide suffix
-                namespace.viewName = namespace.baseInfo.namespaceName.replace(".xml", "").replace(
-                            ".properties", "").replace(".json", "").replace(".yml", "")
-                            .replace(".yaml", "").replace(".txt", "");
+                // namespace.viewName = namespace.baseInfo.namespaceName.replace(".xml", "").replace(
+                //             ".properties", "").replace(".json", "").replace(".yml", "")
+                //             .replace(".yaml", "").replace(".txt", "");
             }
 
             function init() {
