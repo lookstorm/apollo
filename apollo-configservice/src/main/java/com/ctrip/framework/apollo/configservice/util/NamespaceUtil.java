@@ -17,10 +17,11 @@ public class NamespaceUtil {
   }
 
   public String filterNamespaceName(String namespaceName) {
-    if (namespaceName.toLowerCase().endsWith(".properties")) {
-      int dotIndex = namespaceName.lastIndexOf(".");
-      return namespaceName.substring(0, dotIndex);
-    }
+    //todo 适配jd
+//    if (namespaceName.toLowerCase().endsWith(".properties")) {
+//      int dotIndex = namespaceName.lastIndexOf(".");
+//      return namespaceName.substring(0, dotIndex);
+//    }
 
     return namespaceName;
   }

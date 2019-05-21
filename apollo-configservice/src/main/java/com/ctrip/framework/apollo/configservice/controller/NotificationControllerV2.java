@@ -29,10 +29,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.CollectionUtils;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.async.DeferredResult;
 
 import java.lang.reflect.Type;
@@ -86,6 +83,16 @@ public class NotificationControllerV2 implements ReleaseMessageListener {
     this.namespaceUtil = namespaceUtil;
     this.gson = gson;
     this.bizConfig = bizConfig;
+  }
+
+  @PostMapping
+  public DeferredResult<ResponseEntity<List<ApolloConfigNotification>>> pollNotificationPost(@RequestParam(value = "appId") String appId,
+                                                                                             @RequestParam(value = "cluster") String cluster,
+                                                                                             @RequestParam(value = "notifications") String notificationsAsString,
+                                                                                             @RequestParam(value = "dataCenter", required = false) String dataCenter,
+                                                                                             @RequestParam(value = "ip", required = false) String clientIp){
+
+    return pollNotification(appId, cluster, notificationsAsString, dataCenter, clientIp);
   }
 
   @GetMapping
