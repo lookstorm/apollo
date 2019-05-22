@@ -16,6 +16,8 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -37,6 +39,8 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/configs")
 public class ConfigController {
+  private static final Logger logger = LoggerFactory.getLogger(ConfigController.class);
+
   private static final Splitter X_FORWARDED_FOR_SPLITTER = Splitter.on(",").omitEmptyStrings()
       .trimResults();
   private final ConfigService configService;
@@ -61,7 +65,7 @@ public class ConfigController {
     this.gson = gson;
   }
 
-  @GetMapping(value = "/{appId}/{clusterName}/{namespace:.+}")
+  @GetMapping(value = "/{appId}/{clusterName}/{namespace}")
   public ApolloConfig queryConfig(@PathVariable String appId, @PathVariable String clusterName,
                                   @PathVariable String namespace,
                                   @RequestParam(value = "dataCenter", required = false) String dataCenter,
@@ -75,6 +79,7 @@ public class ConfigController {
     //fix the character case issue, such as FX.apollo <-> fx.apollo
     namespace = namespaceUtil.normalizeNamespace(appId, namespace);
 
+    logger.info("===queryConfig====namespace: {}", namespace);
     if (Strings.isNullOrEmpty(clientIp)) {
       clientIp = tryToGetClientIp(request);
     }
