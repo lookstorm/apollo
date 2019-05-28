@@ -15,17 +15,14 @@ import com.ctrip.framework.apollo.openapi.dto.OpenNamespaceLockDTO;
 import com.ctrip.framework.apollo.openapi.util.OpenApiBeanUtils;
 import com.ctrip.framework.apollo.portal.entity.bo.NamespaceBO;
 import com.ctrip.framework.apollo.portal.listener.AppNamespaceCreationEvent;
+import com.ctrip.framework.apollo.portal.listener.AppNamespaceDeletionEvent;
 import com.ctrip.framework.apollo.portal.service.AppNamespaceService;
 import com.ctrip.framework.apollo.portal.service.NamespaceLockService;
 import com.ctrip.framework.apollo.portal.service.NamespaceService;
 import com.ctrip.framework.apollo.portal.spi.UserService;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
@@ -88,6 +85,23 @@ public class NamespaceController {
     publisher.publishEvent(new AppNamespaceCreationEvent(createdAppNamespace));
 
     return OpenApiBeanUtils.transformToOpenAppNamespaceDTO(createdAppNamespace);
+  }
+
+  /**
+   * 删除及创建权限一致   todo: 看后期场景调整
+   * @param appId
+   * @param namespaceName
+   * @return
+   */
+  @PreAuthorize(value = "@consumerPermissionValidator.hasCreateNamespacePermission(#request, #appId)")
+  @DeleteMapping("/apps/{appId}/appnamespaces/{namespaceName:.+}")
+  public OpenAppNamespaceDTO deleteNamespace(@PathVariable String appId, @PathVariable String namespaceName) {
+
+    AppNamespace appNamespace = appNamespaceService.deleteAppNamespace(appId, namespaceName);
+
+    publisher.publishEvent(new AppNamespaceDeletionEvent(appNamespace));
+
+    return OpenApiBeanUtils.transformToOpenAppNamespaceDTO(appNamespace);
   }
 
   @GetMapping(value = "/openapi/v1/envs/{env}/apps/{appId}/clusters/{clusterName}/namespaces")
