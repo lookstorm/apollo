@@ -12,6 +12,8 @@ import com.ctrip.framework.apollo.common.dto.ItemDTO;
 import com.ctrip.framework.apollo.common.exception.BadRequestException;
 import com.ctrip.framework.apollo.common.exception.NotFoundException;
 import com.ctrip.framework.apollo.common.utils.BeanUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -25,6 +27,7 @@ import java.util.List;
 
 @RestController
 public class ItemController {
+  private Logger logger = LoggerFactory.getLogger(ItemController.class);
 
   private final ItemService itemService;
   private final NamespaceService namespaceService;
@@ -152,6 +155,19 @@ public class ItemController {
     if (item == null) {
       throw new NotFoundException(
           String.format("item not found for %s %s %s %s", appId, clusterName, namespaceName, key));
+    }
+    return BeanUtils.transform(ItemDTO.class, item);
+  }
+
+  @GetMapping("/apps/{appId}/clusters/{clusterName}/namespaces/{namespaceName}/itemsv2")
+  public ItemDTO getv2(@PathVariable("appId") String appId,
+                     @PathVariable("clusterName") String clusterName,
+                     @PathVariable("namespaceName") String namespaceName, @RequestParam String key) {
+    logger.info("====adminservice===getv2===", key);
+    Item item = itemService.findOne(appId, clusterName, namespaceName, key);
+    if (item == null) {
+      throw new NotFoundException(
+              String.format("item not found for %s %s %s %s", appId, clusterName, namespaceName, key));
     }
     return BeanUtils.transform(ItemDTO.class, item);
   }

@@ -94,8 +94,8 @@ public class NamespaceController {
    * @return
    */
   @PreAuthorize(value = "@consumerPermissionValidator.hasCreateNamespacePermission(#request, #appId)")
-  @DeleteMapping("/apps/{appId}/appnamespaces/{namespaceName:.+}")
-  public OpenAppNamespaceDTO deleteNamespace(@PathVariable String appId, @PathVariable String namespaceName) {
+  @DeleteMapping("/openapi/v1/apps/{appId}/appnamespaces/{namespaceName}")
+  public OpenAppNamespaceDTO deleteNamespace(@PathVariable String appId, @PathVariable String namespaceName, HttpServletRequest request) {
 
     AppNamespace appNamespace = appNamespaceService.deleteAppNamespace(appId, namespaceName);
 

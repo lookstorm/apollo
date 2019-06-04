@@ -8,7 +8,10 @@ import com.ctrip.framework.apollo.core.utils.StringUtils;
 import com.ctrip.framework.apollo.openapi.dto.OpenItemDTO;
 import com.ctrip.framework.apollo.openapi.util.OpenApiBeanUtils;
 import com.ctrip.framework.apollo.portal.service.ItemService;
+import com.ctrip.framework.apollo.portal.service.NamespaceService;
 import com.ctrip.framework.apollo.portal.spi.UserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -28,6 +31,7 @@ import javax.servlet.http.HttpServletRequest;
 @RestController("openapiItemController")
 @RequestMapping("/openapi/v1/envs/{env}")
 public class ItemController {
+  private Logger logger = LoggerFactory.getLogger(ItemController.class);
 
   private final ItemService itemService;
   private final UserService userService;
@@ -116,7 +120,7 @@ public class ItemController {
 
 
   @PreAuthorize(value = "@consumerPermissionValidator.hasModifyNamespacePermission(#request, #appId, #namespaceName, #env)")
-  @DeleteMapping(value = "/apps/{appId}/clusters/{clusterName}/namespaces/{namespaceName}/items/{key:.+}")
+  @DeleteMapping(value = "/apps/{appId}/clusters/{clusterName}/namespaces/{namespaceName}/items/{key}")
   public void deleteItem(@PathVariable String appId, @PathVariable String env,
                          @PathVariable String clusterName, @PathVariable String namespaceName,
                          @PathVariable String key, @RequestParam String operator,
@@ -127,6 +131,25 @@ public class ItemController {
     }
 
     ItemDTO toDeleteItem = itemService.loadItem(Env.fromString(env), appId, clusterName, namespaceName, key);
+    if (toDeleteItem == null){
+      throw new BadRequestException("item not exists");
+    }
+
+    itemService.deleteItem(Env.fromString(env), toDeleteItem.getId(), operator);
+  }
+
+  @PreAuthorize(value = "@consumerPermissionValidator.hasModifyNamespacePermission(#request, #appId, #namespaceName, #env)")
+  @PostMapping(value = "/apps/{appId}/clusters/{clusterName}/namespaces/{namespaceName}/itemv2")
+  public void deleteItemV2(@PathVariable String appId, @PathVariable String env,
+                         @PathVariable String clusterName, @PathVariable String namespaceName,
+                           @RequestBody OpenItemDTO item, @RequestParam String operator, HttpServletRequest request) {
+    logger.info("========deleteItem=======", item.getKey());
+
+    if (userService.findByUserId(operator) == null) {
+      throw new BadRequestException("user(operator) not exists");
+    }
+
+    ItemDTO toDeleteItem = itemService.loadItemv2(Env.fromString(env), appId, clusterName, namespaceName, item.getKey());
     if (toDeleteItem == null){
       throw new BadRequestException("item not exists");
     }

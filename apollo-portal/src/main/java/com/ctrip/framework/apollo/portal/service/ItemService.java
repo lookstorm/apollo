@@ -114,6 +114,10 @@ public class ItemService {
     return itemAPI.loadItem(env, appId, clusterName, namespaceName, key);
   }
 
+  public ItemDTO loadItemv2(Env env, String appId, String clusterName, String namespaceName, String key) {
+    return itemAPI.loadItemv2(env, appId, clusterName, namespaceName, key);
+  }
+
   public void syncItems(List<NamespaceIdentifier> comparedNamespaces, List<ItemDTO> sourceItems) {
     List<ItemDiffs> itemDiffs = compare(comparedNamespaces, sourceItems);
     for (ItemDiffs itemDiff : itemDiffs) {

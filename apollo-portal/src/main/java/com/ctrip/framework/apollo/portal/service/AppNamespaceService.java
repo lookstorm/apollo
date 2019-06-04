@@ -115,8 +115,8 @@ public class AppNamespaceService {
     //add prefix postfix
     appNamespaceName
         .append(appNamespace.isPublic() && appendNamespacePrefix ? app.getOrgId() + "." : "")
-        .append(appNamespace.getName())
-        .append(appNamespace.formatAsEnum() == ConfigFileFormat.Properties ? "" : "." + appNamespace.getFormat());
+        .append(appNamespace.getName());
+        //.append(appNamespace.formatAsEnum() == ConfigFileFormat.Properties ? "" : "." + appNamespace.getFormat());
     appNamespace.setName(appNamespaceName.toString());
 
     if (appNamespace.getComment() == null) {
