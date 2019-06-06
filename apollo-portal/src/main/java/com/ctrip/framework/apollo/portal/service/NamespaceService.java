@@ -158,6 +158,30 @@ public class NamespaceService {
     return namespaceBOs;
   }
 
+  public List<NamespaceBO> findNamespaceBOsLike(String appId, Env env, String clusterName, String namespaceName) {
+
+    List<NamespaceDTO> namespaces = namespaceAPI.findNamespaceByClusterLike(appId, env, clusterName, namespaceName);
+    if (namespaces == null || namespaces.size() == 0) {
+      throw new BadRequestException("namespaces not exist");
+    }
+
+    List<NamespaceBO> namespaceBOs = new LinkedList<>();
+    for (NamespaceDTO namespace : namespaces) {
+
+      NamespaceBO namespaceBO;
+      try {
+        namespaceBO = transformNamespace2BO(env, namespace);
+        namespaceBOs.add(namespaceBO);
+      } catch (Exception e) {
+        logger.error("parse namespace error. app id:{}, env:{}, clusterName:{}, namespace:{}",
+                appId, env, clusterName, namespace.getNamespaceName(), e);
+        throw e;
+      }
+    }
+
+    return namespaceBOs;
+  }
+
   public List<NamespaceDTO> findNamespaces(String appId, Env env, String clusterName) {
     return namespaceAPI.findNamespaceByCluster(appId, env, clusterName);
   }

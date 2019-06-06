@@ -1,6 +1,6 @@
 /** navbar */
 directive_module.directive('apollonav',
-                           function ($compile, $window, toastr, AppUtil, AppService, EnvService,
+                           function ($compile, $window, toastr, AppUtil, $location, AppService, EnvService,
                            UserService, CommonService, PermissionService) {
                                return {
                                    restrict: 'E',
@@ -27,12 +27,22 @@ directive_module.directive('apollonav',
                                        });
 
                                        scope.searchKey = '';
+                                       scope.searchNameSpace = '';
                                        scope.shouldShowAppList = false;
 
                                        var selectedApp = {};
                                        scope.selectApp = function (app) {
                                            select(app);
                                            scope.jumpToConfigPage();
+                                       };
+
+                                       scope.selectNS = function () {
+                                           var urlParams = AppUtil.parseParams($location.$$url);
+                                           var appId = urlParams.appid;
+                                           console.log("....selectNS....."+scope.searchNameSpace)
+                                           console.log("....selectNS...appId.."+appId)
+                                           $window.location.href = '/config.html?#appid=' + appId +"&searchNameSpace="+scope.searchNameSpace;
+                                           $window.location.reload();
                                        };
 
                                        scope.changeSearchKey = function () {

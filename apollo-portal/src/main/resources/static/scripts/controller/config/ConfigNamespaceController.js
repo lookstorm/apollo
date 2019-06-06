@@ -1,9 +1,9 @@
 application_module.controller("ConfigNamespaceController",
-                              ['$rootScope', '$scope', 'toastr', 'AppUtil', 'EventManager', 'ConfigService',
+                              ['$rootScope', '$scope', 'toastr', 'AppUtil', '$location', 'EventManager', 'ConfigService',
                                'PermissionService', 'UserService', 'NamespaceBranchService', 'NamespaceService',
                                controller]);
 
-function controller($rootScope, $scope, toastr, AppUtil, EventManager, ConfigService,
+function controller($rootScope, $scope, toastr, AppUtil, $location, EventManager, ConfigService,
                     PermissionService, UserService, NamespaceBranchService, NamespaceService) {
 
     $scope.rollback = rollback;
@@ -91,7 +91,13 @@ function controller($rootScope, $scope, toastr, AppUtil, EventManager, ConfigSer
                                if (context.namespace) {
                                    refreshSingleNamespace(context.namespace);
                                } else {
-                                   refreshAllNamespaces();
+                                   console.log(" EventManager.subscribe searchNameSpace: "+$rootScope.pageContext.searchNameSpace);
+                                   if (($rootScope.pageContext.searchNameSpace=="") || ($rootScope.pageContext.searchNameSpace==undefined)){
+                                       refreshAllNamespaces();
+                                   }else{
+                                       refreshAllNamespacesLike();
+                                   }
+
                                }
 
                            });
@@ -104,6 +110,32 @@ function controller($rootScope, $scope, toastr, AppUtil, EventManager, ConfigSer
         ConfigService.load_all_namespaces($rootScope.pageContext.appId,
                                           $rootScope.pageContext.env,
                                           $rootScope.pageContext.clusterName).then(
+            function (result) {
+
+                $scope.namespaces = result;
+                $('.config-item-container').removeClass('hide');
+
+                initPublishInfo();
+            }, function (result) {
+                toastr.error(AppUtil.errorMsg(result), "加载配置信息出错");
+            });
+    }
+
+    function refreshAllNamespacesLike() {
+        var urlParams = AppUtil.parseParams($location.$$url);
+        var appId = urlParams.appid;
+
+        console.log("refreshAllNamespacesLike searchNameSpace: "+$rootScope.pageContext.searchNameSpace);
+        console.log("refreshAllNamespacesLike appId: "+appId);
+        if ($rootScope.pageContext.env == '') {
+            return;
+        }
+
+        $rootScope.pageContext.appId = appId;
+        ConfigService.load_all_namespaces_like(appId,
+            $rootScope.pageContext.env,
+            $rootScope.pageContext.clusterName,
+            $rootScope.pageContext.searchNameSpace).then(
             function (result) {
 
                 $scope.namespaces = result;

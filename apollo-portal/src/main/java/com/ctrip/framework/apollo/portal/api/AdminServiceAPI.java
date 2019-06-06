@@ -15,14 +15,19 @@ import com.ctrip.framework.apollo.common.dto.PageDTO;
 import com.ctrip.framework.apollo.common.dto.ReleaseDTO;
 import com.ctrip.framework.apollo.common.dto.ReleaseHistoryDTO;
 import com.ctrip.framework.apollo.core.enums.Env;
+import com.ctrip.framework.apollo.portal.service.NamespaceService;
 import com.google.common.base.Joiner;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
@@ -69,6 +74,7 @@ public class AdminServiceAPI {
 
     @Service
     public static class NamespaceAPI extends API {
+        private Logger logger = LoggerFactory.getLogger(NamespaceService.class);
 
         private ParameterizedTypeReference<Map<String, Boolean>>
                 typeReference = new ParameterizedTypeReference<Map<String, Boolean>>() {
@@ -78,6 +84,14 @@ public class AdminServiceAPI {
             NamespaceDTO[] namespaceDTOs = restTemplate.get(env, "apps/{appId}/clusters/{clusterName}/namespaces",
                     NamespaceDTO[].class, appId,
                     clusterName);
+            return Arrays.asList(namespaceDTOs);
+        }
+
+        public List<NamespaceDTO> findNamespaceByClusterLike(String appId, Env env, String clusterName, String namespaceName) {
+            logger.info("==========11=========findNamespaceByClusterLike: {}", namespaceName);
+            NamespaceDTO[] namespaceDTOs = restTemplate.get(env, "apps/{appId}/clusters/{clusterName}/namespaceslike/{namespaceName}",
+                    NamespaceDTO[].class, appId,
+                    clusterName, namespaceName);
             return Arrays.asList(namespaceDTOs);
         }
 

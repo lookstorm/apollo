@@ -6,6 +6,8 @@ import com.ctrip.framework.apollo.common.dto.NamespaceDTO;
 import com.ctrip.framework.apollo.common.exception.BadRequestException;
 import com.ctrip.framework.apollo.common.exception.NotFoundException;
 import com.ctrip.framework.apollo.common.utils.BeanUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -20,6 +22,7 @@ import java.util.Map;
 
 @RestController
 public class NamespaceController {
+  private static final Logger logger = LoggerFactory.getLogger(NamespaceController.class);
 
   private final NamespaceService namespaceService;
 
@@ -57,6 +60,14 @@ public class NamespaceController {
   public List<NamespaceDTO> find(@PathVariable("appId") String appId,
                                  @PathVariable("clusterName") String clusterName) {
     List<Namespace> groups = namespaceService.findNamespaces(appId, clusterName);
+    return BeanUtils.batchTransform(NamespaceDTO.class, groups);
+  }
+
+  @GetMapping("/apps/{appId}/clusters/{clusterName}/namespaceslike/{namespaceName}")
+  public List<NamespaceDTO> findLike(@PathVariable("appId") String appId,
+                                 @PathVariable("clusterName") String clusterName, @PathVariable("namespaceName") String namespaceName) {
+    logger.info("==22==findNamespacesLike===namespaceName====: {}", namespaceName );
+    List<Namespace> groups = namespaceService.findNamespacesLike(appId, clusterName, namespaceName);
     return BeanUtils.batchTransform(NamespaceDTO.class, groups);
   }
 

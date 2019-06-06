@@ -20,10 +20,12 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.DefaultUriBuilderFactory;
+import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.web.util.UriTemplateHandler;
 
 import javax.annotation.PostConstruct;
 import java.net.SocketTimeoutException;
+import java.net.URI;
 import java.util.List;
 
 /**
@@ -136,9 +138,11 @@ public class RetryableRestTemplate {
 
     for (ServiceDTO serviceDTO : services) {
       try {
+        String url = parseHost(serviceDTO) + path;
+        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(url);
 
         ResponseEntity<T> result =
-            restTemplate.exchange(parseHost(serviceDTO) + path, HttpMethod.GET, null, reference, uriVariables);
+            restTemplate.exchange(builder.build().expand(uriVariables).encode().toUri(), HttpMethod.GET, null, reference );
 
         ct.setStatus(Transaction.SUCCESS);
         ct.complete();
@@ -188,19 +192,23 @@ public class RetryableRestTemplate {
                           Class<T> responseType,
                           Object... uriVariables) {
     T result = null;
+
+    String url = parseHost(service) + path;
+    UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(url);
     switch (method) {
       case GET:
-        result = restTemplate.getForObject(parseHost(service) + path, responseType, uriVariables);
+        URI callUrl = builder.build().expand(uriVariables).toUri();
+        result = restTemplate.getForObject(callUrl, responseType);
         break;
       case POST:
         result =
-            restTemplate.postForEntity(parseHost(service) + path, request, responseType, uriVariables).getBody();
+            restTemplate.postForEntity(builder.build().expand(uriVariables).toUri(), request, responseType).getBody();
         break;
       case PUT:
-        restTemplate.put(parseHost(service) + path, request, uriVariables);
+        restTemplate.put(builder.build().expand(uriVariables).toUri(), request);
         break;
       case DELETE:
-        restTemplate.delete(parseHost(service) + path, uriVariables);
+        restTemplate.delete(builder.build().expand(uriVariables).toUri());
         break;
       default:
         throw new UnsupportedOperationException(String.format("unsupported http method(method=%s)", method));

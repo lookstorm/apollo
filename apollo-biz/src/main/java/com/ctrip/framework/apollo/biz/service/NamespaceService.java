@@ -18,6 +18,8 @@ import com.ctrip.framework.apollo.common.utils.BeanUtils;
 import com.ctrip.framework.apollo.core.ConfigConsts;
 import com.google.common.collect.Maps;
 import com.google.gson.Gson;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -35,6 +37,7 @@ import java.util.stream.Collectors;
 
 @Service
 public class NamespaceService {
+  private static final Logger logger = LoggerFactory.getLogger(NamespaceService.class);
 
   private Gson gson = new Gson();
 
@@ -181,6 +184,15 @@ public class NamespaceService {
 
   public List<Namespace> findNamespaces(String appId, String clusterName) {
     List<Namespace> namespaces = namespaceRepository.findByAppIdAndClusterNameOrderByIdAsc(appId, clusterName);
+    if (namespaces == null) {
+      return Collections.emptyList();
+    }
+    return namespaces;
+  }
+
+  public List<Namespace> findNamespacesLike(String appId, String clusterName, String namespaceName) {
+    logger.info("==33==findNamespacesLike===namespaceName====: {}", namespaceName );
+    List<Namespace> namespaces = namespaceRepository.findByAppIdAndClusterNameOrderByIdAscLike(appId, clusterName, namespaceName);
     if (namespaces == null) {
       return Collections.emptyList();
     }
