@@ -18,7 +18,7 @@ appService.service("ConfigService", ['$resource', '$q', function ($resource, $q)
         load_all_namespaces_like: {
             method: 'GET',
             isArray: true,
-            url: '/apps/:appId/envs/:env/clusters/:clusterName/namespaceslike/:namespaceName'
+            url: '/apps/:appId/envs/:env/clusters/:clusterName/namespaceslike?namespaceName=:namespaceName&keyName=:keyName'
         },
         find_items: {
             method: 'GET',
@@ -99,13 +99,14 @@ appService.service("ConfigService", ['$resource', '$q', function ($resource, $q)
             });
             return d.promise;
         },
-        load_all_namespaces_like: function (appId, env, clusterName, namespaceName) {
+        load_all_namespaces_like: function (appId, env, clusterName, namespaceName, keyName) {
             var d = $q.defer();
             config_source.load_all_namespaces_like({
                 appId: appId,
                 env: env,
                 clusterName: clusterName,
-                namespaceName: namespaceName
+                namespaceName: namespaceName,
+                keyName: keyName
             }, function (result) {
                 d.resolve(result);
             }, function (result) {

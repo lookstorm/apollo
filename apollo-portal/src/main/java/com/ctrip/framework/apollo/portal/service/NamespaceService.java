@@ -158,9 +158,9 @@ public class NamespaceService {
     return namespaceBOs;
   }
 
-  public List<NamespaceBO> findNamespaceBOsLike(String appId, Env env, String clusterName, String namespaceName) {
+  public List<NamespaceBO> findNamespaceBOsLike(String appId, Env env, String clusterName, String namespaceName, String keyName, int page, int size) {
 
-    List<NamespaceDTO> namespaces = namespaceAPI.findNamespaceByClusterLike(appId, env, clusterName, namespaceName);
+    List<NamespaceDTO> namespaces = namespaceAPI.findNamespaceByClusterLike(appId, env, clusterName, namespaceName, keyName, page, size);
     if (namespaces == null || namespaces.size() == 0) {
       throw new BadRequestException("namespaces not exist");
     }

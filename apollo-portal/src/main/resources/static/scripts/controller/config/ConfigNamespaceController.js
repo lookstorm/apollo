@@ -92,11 +92,16 @@ function controller($rootScope, $scope, toastr, AppUtil, $location, EventManager
                                    refreshSingleNamespace(context.namespace);
                                } else {
                                    console.log(" EventManager.subscribe searchNameSpace: "+$rootScope.pageContext.searchNameSpace);
-                                   if (($rootScope.pageContext.searchNameSpace=="") || ($rootScope.pageContext.searchNameSpace==undefined)){
-                                       refreshAllNamespaces();
-                                   }else{
-                                       refreshAllNamespacesLike();
+                                   console.log(" EventManager.subscribe searchKeyValue: "+$rootScope.pageContext.searchKeyValue);
+
+                                   if($rootScope.pageContext.searchNameSpace==null || $rootScope.pageContext.searchNameSpace==undefined){
+                                       $rootScope.pageContext.searchNameSpace = ""
                                    }
+                                   if($rootScope.pageContext.searchKeyValue==null || $rootScope.pageContext.searchKeyValue==undefined){
+                                       $rootScope.pageContext.searchKeyValue = ""
+                                   }
+
+                                   refreshAllNamespacesLike();
 
                                }
 
@@ -126,6 +131,7 @@ function controller($rootScope, $scope, toastr, AppUtil, $location, EventManager
         var appId = urlParams.appid;
 
         console.log("refreshAllNamespacesLike searchNameSpace: "+$rootScope.pageContext.searchNameSpace);
+        console.log("refreshAllNamespacesLike searchKeyValue: "+$rootScope.pageContext.searchKeyValue);
         console.log("refreshAllNamespacesLike appId: "+appId);
         if ($rootScope.pageContext.env == '') {
             return;
@@ -135,7 +141,8 @@ function controller($rootScope, $scope, toastr, AppUtil, $location, EventManager
         ConfigService.load_all_namespaces_like(appId,
             $rootScope.pageContext.env,
             $rootScope.pageContext.clusterName,
-            $rootScope.pageContext.searchNameSpace).then(
+            $rootScope.pageContext.searchNameSpace,
+            $rootScope.pageContext.searchKeyValue).then(
             function (result) {
 
                 $scope.namespaces = result;

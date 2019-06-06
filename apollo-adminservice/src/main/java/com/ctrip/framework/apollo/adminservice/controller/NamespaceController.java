@@ -63,11 +63,11 @@ public class NamespaceController {
     return BeanUtils.batchTransform(NamespaceDTO.class, groups);
   }
 
-  @GetMapping("/apps/{appId}/clusters/{clusterName}/namespaceslike/{namespaceName}")
+  @GetMapping("/apps/{appId}/clusters/{clusterName}/namespaceslike")
   public List<NamespaceDTO> findLike(@PathVariable("appId") String appId,
-                                 @PathVariable("clusterName") String clusterName, @PathVariable("namespaceName") String namespaceName) {
-    logger.info("==22==findNamespacesLike===namespaceName====: {}", namespaceName );
-    List<Namespace> groups = namespaceService.findNamespacesLike(appId, clusterName, namespaceName);
+                                 @PathVariable("clusterName") String clusterName, @RequestParam String namespaceName, @RequestParam String keyName, @RequestParam int page, @RequestParam int size) {
+    logger.info("==22==findNamespacesLike===namespaceName====: {}, {}, {}, {}", namespaceName, keyName, page, size);
+    List<Namespace> groups = namespaceService.findNamespacesLike(appId, clusterName, namespaceName, keyName, page, size);
     return BeanUtils.batchTransform(NamespaceDTO.class, groups);
   }
 

@@ -98,12 +98,16 @@ public class NamespaceController {
     return namespaceBOs;
   }
 
-  @GetMapping("/apps/{appId}/envs/{env}/clusters/{clusterName}/namespaceslike/{namespaceName}")
+  @GetMapping("/apps/{appId}/envs/{env}/clusters/{clusterName}/namespaceslike")
   public List<NamespaceBO> findNamespacesLike(@PathVariable String appId, @PathVariable String env,
-                                          @PathVariable String clusterName, @PathVariable String namespaceName) {
-      logger.info("==0===findNamespacesLike: {}", namespaceName);
+                                          @PathVariable String clusterName,
+                                              @RequestParam(name = "namespaceName", defaultValue = "") String namespaceName,
+                                              @RequestParam(name = "keyName", defaultValue = "") String keyName,
+                                              @RequestParam(name = "page", defaultValue = "0") int page,
+                                              @RequestParam(name = "size", defaultValue = "10") int size) {
+      logger.info("==0===findNamespacesLike: {}, {}, {}, {}", namespaceName, keyName, page, size);
 
-    List<NamespaceBO> namespaceBOs = namespaceService.findNamespaceBOsLike(appId, Env.valueOf(env), clusterName, namespaceName);
+    List<NamespaceBO> namespaceBOs = namespaceService.findNamespaceBOsLike(appId, Env.valueOf(env), clusterName, namespaceName, keyName, page, size);
 
     for (NamespaceBO namespaceBO : namespaceBOs) {
       if (permissionValidator.shouldHideConfigToCurrentUser(appId, env, namespaceBO.getBaseInfo().getNamespaceName())) {

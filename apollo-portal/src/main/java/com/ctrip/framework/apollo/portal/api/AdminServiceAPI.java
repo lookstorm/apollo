@@ -87,11 +87,11 @@ public class AdminServiceAPI {
             return Arrays.asList(namespaceDTOs);
         }
 
-        public List<NamespaceDTO> findNamespaceByClusterLike(String appId, Env env, String clusterName, String namespaceName) {
-            logger.info("==========11=========findNamespaceByClusterLike: {}", namespaceName);
-            NamespaceDTO[] namespaceDTOs = restTemplate.get(env, "apps/{appId}/clusters/{clusterName}/namespaceslike/{namespaceName}",
+        public List<NamespaceDTO> findNamespaceByClusterLike(String appId, Env env, String clusterName, String namespaceName, String keyName, int page, int size) {
+            logger.info("==========11=========findNamespaceByClusterLike: {}, {}, {}, {}", namespaceName, keyName, page, size);
+            NamespaceDTO[] namespaceDTOs = restTemplate.get(env, "apps/{appId}/clusters/{clusterName}/namespaceslike?namespaceName={namespaceName}&keyName={keyName}&page={page}&size={size}",
                     NamespaceDTO[].class, appId,
-                    clusterName, namespaceName);
+                    clusterName, namespaceName, keyName, page, size);
             return Arrays.asList(namespaceDTOs);
         }
 

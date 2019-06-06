@@ -13,6 +13,7 @@ function ConfigBaseInfoController($rootScope, $scope, $window, $location, toastr
     var urlParams = AppUtil.parseParams($location.$$url);
     var appId = urlParams.appid;
     var searchNameSpace = urlParams.searchNameSpace;
+    var searchKeyValue = urlParams.searchKeyValue;
 
     if (!appId) {
         $window.location.href = '/index.html';
@@ -30,6 +31,7 @@ function ConfigBaseInfoController($rootScope, $scope, $window, $location, toastr
         $rootScope.pageContext = {
             appId: appId,
             searchNameSpace: searchNameSpace,
+            searchKeyValue: searchKeyValue,
             env: urlParams.env ? urlParams.env : (scene ? scene.env : ''),
             clusterName: urlParams.cluster ? urlParams.cluster : (scene ? scene.cluster : 'default')
         };

@@ -28,6 +28,7 @@ directive_module.directive('apollonav',
 
                                        scope.searchKey = '';
                                        scope.searchNameSpace = '';
+                                       scope.searchKeyValue = '';
                                        scope.shouldShowAppList = false;
 
                                        var selectedApp = {};
@@ -39,9 +40,10 @@ directive_module.directive('apollonav',
                                        scope.selectNS = function () {
                                            var urlParams = AppUtil.parseParams($location.$$url);
                                            var appId = urlParams.appid;
-                                           console.log("....selectNS....."+scope.searchNameSpace)
+                                           console.log("....selectNS..searchNameSpace..."+scope.searchNameSpace)
+                                           console.log("....selectNS..searchKeyValue..."+scope.searchKeyValue)
                                            console.log("....selectNS...appId.."+appId)
-                                           $window.location.href = '/config.html?#appid=' + appId +"&searchNameSpace="+scope.searchNameSpace;
+                                           $window.location.href = '/config.html?#appid=' + appId +"&searchNameSpace="+scope.searchNameSpace+"&searchKeyValue="+scope.searchKeyValue;
                                            $window.location.reload();
                                        };
 
