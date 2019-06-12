@@ -40,10 +40,21 @@ directive_module.directive('apollonav',
                                        scope.selectNS = function () {
                                            var urlParams = AppUtil.parseParams($location.$$url);
                                            var appId = urlParams.appid;
-                                           console.log("....selectNS..searchNameSpace..."+scope.searchNameSpace)
-                                           console.log("....selectNS..searchKeyValue..."+scope.searchKeyValue)
+                                           var ss1 = document.getElementById("ss1").value;
+                                           var ss2 = document.getElementById("ss2").value;
+
+                                           if(ss1==null || ss1==undefined){
+                                               ss1 = ""
+                                           }
+                                           if(ss2==null || ss2==undefined){
+                                               ss2 = ""
+                                           }
+
+                                           console.log("....selectNS..searchNameSpace..."+ss1)
+                                           console.log("....selectNS..searchKeyValue..."+ss2)
                                            console.log("....selectNS...appId.."+appId)
-                                           $window.location.href = '/config.html?#appid=' + appId +"&searchNameSpace="+scope.searchNameSpace+"&searchKeyValue="+scope.searchKeyValue;
+
+                                           $window.location.href = '/config.html?#appid=' + appId +"&searchNameSpace="+encodeURIComponent(ss2)+"&searchKeyValue="+encodeURIComponent(ss1);
                                            $window.location.reload();
                                        };
 

@@ -130,9 +130,23 @@ function controller($rootScope, $scope, toastr, AppUtil, $location, EventManager
         var urlParams = AppUtil.parseParams($location.$$url);
         var appId = urlParams.appid;
 
-        console.log("refreshAllNamespacesLike searchNameSpace: "+$rootScope.pageContext.searchNameSpace);
-        console.log("refreshAllNamespacesLike searchKeyValue: "+$rootScope.pageContext.searchKeyValue);
+        var ss2 = urlParams.searchNameSpace;
+        var ss1 = urlParams.searchKeyValue;
+
+        if(ss1==null || ss1==undefined){
+            ss1 = ""
+        }
+        if(ss2==null || ss2==undefined){
+            ss2 = ""
+        }
+
+        console.log("refreshAllNamespacesLike searchNameSpace: "+ss2);
+        console.log("refreshAllNamespacesLike searchKeyValue: "+ss1);
         console.log("refreshAllNamespacesLike appId: "+appId);
+
+        document.getElementById("ss2").value = decodeURIComponent(ss2);
+        document.getElementById("ss1").value = decodeURIComponent(ss1);
+
         if ($rootScope.pageContext.env == '') {
             return;
         }
@@ -141,8 +155,8 @@ function controller($rootScope, $scope, toastr, AppUtil, $location, EventManager
         ConfigService.load_all_namespaces_like(appId,
             $rootScope.pageContext.env,
             $rootScope.pageContext.clusterName,
-            $rootScope.pageContext.searchNameSpace,
-            $rootScope.pageContext.searchKeyValue).then(
+            ss2,
+            ss1).then(
             function (result) {
 
                 $scope.namespaces = result;
