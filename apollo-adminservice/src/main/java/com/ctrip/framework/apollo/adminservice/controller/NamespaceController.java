@@ -3,6 +3,7 @@ package com.ctrip.framework.apollo.adminservice.controller;
 import com.ctrip.framework.apollo.biz.entity.Namespace;
 import com.ctrip.framework.apollo.biz.service.NamespaceService;
 import com.ctrip.framework.apollo.common.dto.NamespaceDTO;
+import com.ctrip.framework.apollo.common.dto.NamespaceWrapperDTO;
 import com.ctrip.framework.apollo.common.exception.BadRequestException;
 import com.ctrip.framework.apollo.common.exception.NotFoundException;
 import com.ctrip.framework.apollo.common.utils.BeanUtils;
@@ -69,6 +70,14 @@ public class NamespaceController {
     logger.info("==22==findNamespacesLike===namespaceName====: {}, {}, {}, {}", namespaceName, keyName, page, size);
     List<Namespace> groups = namespaceService.findNamespacesLike(appId, clusterName, namespaceName, keyName, page, size);
     return BeanUtils.batchTransform(NamespaceDTO.class, groups);
+  }
+
+  @GetMapping("/apps/{appId}/clusters/{clusterName}/namespaceslikeV1")
+  public NamespaceWrapperDTO findLikeV1(@PathVariable("appId") String appId,
+                                        @PathVariable("clusterName") String clusterName, @RequestParam String namespaceName, @RequestParam String keyName, @RequestParam int page, @RequestParam int size) {
+    logger.info("==22.1==findNamespacesLike===namespaceName====: {}, {}, {}, {}", namespaceName, keyName, page, size);
+    NamespaceWrapperDTO groups = namespaceService.findNamespacesLikeV1(appId, clusterName, namespaceName, keyName, page, size);
+    return groups;
   }
 
   @GetMapping("/namespaces/{namespaceId}")

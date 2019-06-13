@@ -21,10 +21,10 @@ public interface NamespaceRepository extends PagingAndSortingRepository<Namespac
   @Query("SELECT n from Namespace n WHERE n.appId=:appId and n.clusterName=:clusterName and n.isDeleted=0 and n.namespaceName LIKE %:namespaceName%")
   Page<Namespace> findByAppIdAndClusterNameOrderByIdAscLikeWithNamespace(@Param("appId") String appId, @Param("clusterName") String clusterName, @Param("namespaceName") String namespaceName, Pageable pageable);
 
-  @Query(value = "SELECT * from namespace n,item i WHERE n.Id=i.NamespaceId and n.AppId=:appId and n.ClusterName=:clusterName and n.IsDeleted=0 and i.IsDeleted=0 and i.Key like %:keyName%", nativeQuery = true)
+  @Query(value = "SELECT * from namespace n,item i WHERE n.Id=i.NamespaceId and n.AppId=:appId and n.ClusterName=:clusterName and n.IsDeleted=0 and i.IsDeleted=0 and i.Key like %:keyName% group by n.NamespaceName", nativeQuery = true)
   Page<Namespace> findByAppIdAndClusterNameOrderByIdAscLikeWithKey(@Param("appId") String appId, @Param("clusterName") String clusterName, @Param("keyName") String keyName, Pageable pageable);
 
-  @Query(value = "SELECT * from namespace n,item i WHERE n.Id=i.NamespaceId and n.AppId=:appId and n.ClusterName=:clusterName and n.IsDeleted=0 and i.IsDeleted=0 and n.NamespaceName LIKE %:namespaceName% and i.Key like %:keyName%", nativeQuery = true)
+  @Query(value = "SELECT * from namespace n,item i WHERE n.Id=i.NamespaceId and n.AppId=:appId and n.ClusterName=:clusterName and n.IsDeleted=0 and i.IsDeleted=0 and n.NamespaceName LIKE %:namespaceName% and i.Key like %:keyName% group by n.NamespaceName", nativeQuery = true)
   Page<Namespace> findByAppIdAndClusterNameOrderByIdAscLikeWithAll(@Param("appId") String appId, @Param("clusterName") String clusterName, @Param("namespaceName") String namespaceName, @Param("keyName") String keyName, Pageable pageable);
 
   Namespace findByAppIdAndClusterNameAndNamespaceName(String appId, String clusterName, String namespaceName);

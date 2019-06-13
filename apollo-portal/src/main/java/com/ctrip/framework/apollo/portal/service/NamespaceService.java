@@ -3,6 +3,7 @@ package com.ctrip.framework.apollo.portal.service;
 import com.ctrip.framework.apollo.common.constants.GsonType;
 import com.ctrip.framework.apollo.common.dto.ItemDTO;
 import com.ctrip.framework.apollo.common.dto.NamespaceDTO;
+import com.ctrip.framework.apollo.common.dto.NamespaceWrapperDTO;
 import com.ctrip.framework.apollo.common.dto.ReleaseDTO;
 import com.ctrip.framework.apollo.common.entity.AppNamespace;
 import com.ctrip.framework.apollo.common.exception.BadRequestException;
@@ -17,6 +18,7 @@ import com.ctrip.framework.apollo.portal.constant.RoleType;
 import com.ctrip.framework.apollo.portal.constant.TracerEventType;
 import com.ctrip.framework.apollo.portal.entity.bo.ItemBO;
 import com.ctrip.framework.apollo.portal.entity.bo.NamespaceBO;
+import com.ctrip.framework.apollo.portal.entity.bo.NamespaceWrapperBO;
 import com.ctrip.framework.apollo.portal.spi.UserInfoHolder;
 import com.ctrip.framework.apollo.portal.util.RoleUtils;
 import com.ctrip.framework.apollo.tracer.Tracer;
@@ -180,6 +182,46 @@ public class NamespaceService {
     }
 
     return namespaceBOs;
+  }
+
+  public NamespaceWrapperBO findNamespaceBOsLikeV1(String appId, Env env, String clusterName, String namespaceName, String keyName, int page, int size) {
+    NamespaceWrapperBO result = new NamespaceWrapperBO();
+
+    NamespaceWrapperDTO namespaceWrapperDTO = namespaceAPI.findNamespaceByClusterLikeV1(appId, env, clusterName, namespaceName, keyName, page, size);
+    if(null == namespaceWrapperDTO){
+      throw new BadRequestException("namespaces not exist");
+    }
+    List<NamespaceDTO> namespaces = namespaceWrapperDTO.getNamespaceList();
+    if (namespaces == null || namespaces.size() == 0) {
+      throw new BadRequestException("namespaces not exist");
+    }
+
+    List<NamespaceBO> namespaceBOs = new LinkedList<>();
+    for (NamespaceDTO namespace : namespaces) {
+
+      NamespaceBO namespaceBO;
+      try {
+        namespaceBO = transformNamespace2BO(env, namespace);
+        namespaceBOs.add(namespaceBO);
+      } catch (Exception e) {
+        logger.error("parse namespace error. app id:{}, env:{}, clusterName:{}, namespace:{}",
+                appId, env, clusterName, namespace.getNamespaceName(), e);
+        throw e;
+      }
+    }
+
+    result.setFirstPage(namespaceWrapperDTO.isFirstPage());
+    result.setLastPage(namespaceWrapperDTO.isLastPage());
+    result.setHasPreviousPage(namespaceWrapperDTO.isHasPreviousPage());
+    result.setHasNextPage(namespaceWrapperDTO.isHasNextPage());
+    result.setNamespaceBOList(namespaceBOs);
+    result.setNumberOfElements(namespaceWrapperDTO.getNumberOfElements());
+    result.setPageNumber(namespaceWrapperDTO.getPageNumber());
+    result.setPageSize(namespaceWrapperDTO.getPageSize());
+    result.setTotalElements(namespaceWrapperDTO.getTotalElements());
+    result.setTotalPages(namespaceWrapperDTO.getTotalPages());
+
+    return result;
   }
 
   public List<NamespaceDTO> findNamespaces(String appId, Env env, String clusterName) {

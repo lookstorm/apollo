@@ -11,6 +11,8 @@ import com.ctrip.framework.apollo.biz.repository.NamespaceRepository;
 import com.ctrip.framework.apollo.biz.utils.ReleaseMessageKeyGenerator;
 import com.ctrip.framework.apollo.common.constants.GsonType;
 import com.ctrip.framework.apollo.common.constants.NamespaceBranchStatus;
+import com.ctrip.framework.apollo.common.dto.NamespaceDTO;
+import com.ctrip.framework.apollo.common.dto.NamespaceWrapperDTO;
 import com.ctrip.framework.apollo.common.entity.AppNamespace;
 import com.ctrip.framework.apollo.common.exception.BadRequestException;
 import com.ctrip.framework.apollo.common.exception.ServiceException;
@@ -22,6 +24,7 @@ import com.google.gson.Gson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -210,6 +213,43 @@ public class NamespaceService {
             return Collections.emptyList();
         }
         return namespaces;
+    }
+
+    public NamespaceWrapperDTO findNamespacesLikeV1(String appId, String clusterName, String namespaceName, String keyName, int page, int size) {
+        logger.info("==33.1==findNamespacesLike===namespaceName====: {}, {}, {}, {}", namespaceName, keyName, page, size);
+
+        NamespaceWrapperDTO result = new NamespaceWrapperDTO();
+        List<Namespace> namespaces = null;
+        Pageable pageable = PageRequest.of(page, size);
+
+        Page<Namespace> namespacePage = null;
+        if (StringUtils.isBlank(namespaceName) && StringUtils.isBlank(keyName)) {
+            namespacePage = namespaceRepository.findByAppIdAndClusterNameOrderByIdAscLike(appId, clusterName, pageable);
+        } else if (!StringUtils.isBlank(namespaceName) && StringUtils.isEmpty(keyName)) {
+            namespacePage = namespaceRepository.findByAppIdAndClusterNameOrderByIdAscLikeWithNamespace(appId, clusterName, namespaceName, pageable);
+        } else if (StringUtils.isBlank(namespaceName) && !StringUtils.isBlank(keyName)) {
+            namespacePage = namespaceRepository.findByAppIdAndClusterNameOrderByIdAscLikeWithKey(appId, clusterName, keyName, pageable);
+        } else if (!StringUtils.isBlank(namespaceName) && !StringUtils.isBlank(keyName)) {
+            namespacePage = namespaceRepository.findByAppIdAndClusterNameOrderByIdAscLikeWithAll(appId, clusterName, namespaceName, keyName, pageable);
+        }
+
+        namespaces = namespacePage.getContent();
+        if (namespaces == null) {
+            namespaces = Collections.emptyList();
+        }
+
+        result.setFirstPage(namespacePage.isFirst());
+        result.setLastPage(namespacePage.isLast());
+        result.setHasPreviousPage(namespacePage.hasPrevious());
+        result.setHasNextPage(namespacePage.hasNext());
+        result.setNamespaceList(BeanUtils.batchTransform(NamespaceDTO.class, namespaces));
+        result.setNumberOfElements(namespacePage.getNumberOfElements());
+        result.setPageNumber(namespacePage.getNumber());
+        result.setPageSize(namespacePage.getSize());
+        result.setTotalElements(namespacePage.getTotalElements());
+        result.setTotalPages(namespacePage.getTotalPages());
+
+        return result;
     }
 
     public List<Namespace> findByAppIdAndNamespaceName(String appId, String namespaceName) {

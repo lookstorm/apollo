@@ -1,19 +1,7 @@
 package com.ctrip.framework.apollo.portal.api;
 
 
-import com.ctrip.framework.apollo.common.dto.AppDTO;
-import com.ctrip.framework.apollo.common.dto.AppNamespaceDTO;
-import com.ctrip.framework.apollo.common.dto.ClusterDTO;
-import com.ctrip.framework.apollo.common.dto.CommitDTO;
-import com.ctrip.framework.apollo.common.dto.GrayReleaseRuleDTO;
-import com.ctrip.framework.apollo.common.dto.InstanceDTO;
-import com.ctrip.framework.apollo.common.dto.ItemChangeSets;
-import com.ctrip.framework.apollo.common.dto.ItemDTO;
-import com.ctrip.framework.apollo.common.dto.NamespaceDTO;
-import com.ctrip.framework.apollo.common.dto.NamespaceLockDTO;
-import com.ctrip.framework.apollo.common.dto.PageDTO;
-import com.ctrip.framework.apollo.common.dto.ReleaseDTO;
-import com.ctrip.framework.apollo.common.dto.ReleaseHistoryDTO;
+import com.ctrip.framework.apollo.common.dto.*;
 import com.ctrip.framework.apollo.core.enums.Env;
 import com.ctrip.framework.apollo.portal.service.NamespaceService;
 import com.google.common.base.Joiner;
@@ -93,6 +81,14 @@ public class AdminServiceAPI {
                     NamespaceDTO[].class, appId,
                     clusterName, namespaceName, keyName, page, size);
             return Arrays.asList(namespaceDTOs);
+        }
+
+        public NamespaceWrapperDTO findNamespaceByClusterLikeV1(String appId, Env env, String clusterName, String namespaceName, String keyName, int page, int size) {
+            logger.info("==========11.1=========findNamespaceByClusterLikeV1: {}, {}, {}, {}", namespaceName, keyName, page, size);
+            NamespaceWrapperDTO namespaceDTOs = restTemplate.get(env, "apps/{appId}/clusters/{clusterName}/namespaceslikeV1?namespaceName={namespaceName}&keyName={keyName}&page={page}&size={size}",
+                    NamespaceWrapperDTO.class, appId,
+                    clusterName, namespaceName, keyName, page, size);
+            return namespaceDTOs;
         }
 
         public NamespaceDTO loadNamespace(String appId, Env env, String clusterName,

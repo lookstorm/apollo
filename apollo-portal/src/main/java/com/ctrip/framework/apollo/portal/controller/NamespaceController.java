@@ -13,6 +13,7 @@ import com.ctrip.framework.apollo.portal.api.AdminServiceAPI;
 import com.ctrip.framework.apollo.portal.component.PermissionValidator;
 import com.ctrip.framework.apollo.portal.component.config.PortalConfig;
 import com.ctrip.framework.apollo.portal.entity.bo.NamespaceBO;
+import com.ctrip.framework.apollo.portal.entity.bo.NamespaceWrapperBO;
 import com.ctrip.framework.apollo.portal.entity.model.NamespaceCreationModel;
 import com.ctrip.framework.apollo.portal.listener.AppNamespaceCreationEvent;
 import com.ctrip.framework.apollo.portal.listener.AppNamespaceDeletionEvent;
@@ -117,6 +118,27 @@ public class NamespaceController {
 
     return namespaceBOs;
   }
+
+    @GetMapping("/apps/{appId}/envs/{env}/clusters/{clusterName}/namespaceslikeV1")
+    public NamespaceWrapperBO findNamespacesLikeV1(@PathVariable String appId, @PathVariable String env,
+                                                @PathVariable String clusterName,
+                                                @RequestParam(name = "namespaceName", defaultValue = "") String namespaceName,
+                                                @RequestParam(name = "keyName", defaultValue = "") String keyName,
+                                                @RequestParam(name = "page", defaultValue = "0") int page,
+                                                @RequestParam(name = "size", defaultValue = "10") int size) {
+        logger.info("==0.1==findNamespacesLike: {}, {}, {}, {}", namespaceName, keyName, page, size);
+
+        NamespaceWrapperBO namespaceWrapperBO = namespaceService.findNamespaceBOsLikeV1(appId, Env.valueOf(env), clusterName, namespaceName, keyName, page, size);
+        List<NamespaceBO> namespaceBOs = namespaceWrapperBO.getNamespaceBOList();
+
+        for (NamespaceBO namespaceBO : namespaceBOs) {
+            if (permissionValidator.shouldHideConfigToCurrentUser(appId, env, namespaceBO.getBaseInfo().getNamespaceName())) {
+                namespaceBO.hideItems();
+            }
+        }
+
+        return namespaceWrapperBO;
+    }
 
   @GetMapping("/apps/{appId}/envs/{env}/clusters/{clusterName}/namespaces/{namespaceName:.+}")
   public NamespaceBO findNamespace(@PathVariable String appId, @PathVariable String env,
