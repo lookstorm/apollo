@@ -500,5 +500,3 @@ function controller($rootScope, $scope, toastr, AppUtil, $location, EventManager
 
 
 }
-
-
