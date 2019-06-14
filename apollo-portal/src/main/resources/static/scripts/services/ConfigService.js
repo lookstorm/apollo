@@ -20,6 +20,11 @@ appService.service("ConfigService", ['$resource', '$q', function ($resource, $q)
             isArray: true,
             url: '/apps/:appId/envs/:env/clusters/:clusterName/namespaceslike?namespaceName=:namespaceName&keyName=:keyName'
         },
+        load_all_namespaces_like_v2: {
+            method: 'GET',
+            isArray: false,
+            url: '/apps/:appId/envs/:env/clusters/:clusterName/namespaceslikeV1?namespaceName=:namespaceName&keyName=:keyName&page=:page&size=:size'
+        },
         find_items: {
             method: 'GET',
             isArray: true,
@@ -114,7 +119,23 @@ appService.service("ConfigService", ['$resource', '$q', function ($resource, $q)
             });
             return d.promise;
         },
-
+        load_all_namespaces_like_v2: function (appId, env, clusterName, namespaceName, keyName, page, size) {
+            var d = $q.defer();
+            config_source.load_all_namespaces_like_v2({
+                appId: appId,
+                env: env,
+                clusterName: clusterName,
+                namespaceName: namespaceName,
+                keyName: keyName,
+                page: page,
+                size: size
+            }, function (result) {
+                d.resolve(result);
+            }, function (result) {
+                d.reject(result);
+            });
+            return d.promise;
+        },
         find_items: function (appId, env, clusterName, namespaceName, orderBy) {
             var d = $q.defer();
             config_source.find_items({

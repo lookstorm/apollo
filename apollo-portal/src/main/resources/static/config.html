@@ -220,7 +220,7 @@
                        pre-create-branch="preCreateBranch"
                        pre-delete-branch="preDeleteBranch">
         </apollonspanel>
-
+        <ul ng-change="pageChanged()" ng-show="isShowPage" style="position: absolute;right: 15px;margin: 0 0;" uib-pagination total-items="totalItems" ng-model="currentPage" max-size="maxSize" class="pagination-lg" boundary-link-numbers="true"></ul>
         <releasemodal app-id="pageContext.appId"
                       env="pageContext.env"
                       cluster="pageContext.clusterName">
@@ -378,6 +378,11 @@
 
 <!--angular-->
 <script src="vendor/angular/angular.min.js"></script>
+<script src="vendor/angular/angular-resource.min.js"></script>
+<script src="vendor/angular/angular-animate.min.js"></script>
+<script src="vendor/angular/angular-touch.min.js"></script>
+<script src="vendor/angular/angular-sanitize.js"></script>
+<script src="vendor/angular/ui-bootstrap-tpls-2.5.0.min.js"></script>
 <script src="vendor/angular/angular-resource.min.js"></script>
 <script src="vendor/angular/angular-toastr-1.4.1.tpls.min.js"></script>
 <script src="vendor/angular/loading-bar.min.js"></script>

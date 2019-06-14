@@ -28,6 +28,62 @@ function controller($rootScope, $scope, toastr, AppUtil, $location, EventManager
         initRole();
         initUser();
         initPublishInfo();
+        initPage();
+    }
+
+    function initPage() {
+        $scope.currentPage = 1;
+        $scope.isShowPage = false;
+
+        // $scope.setPage = function (pageNo) {
+        //     $scope.currentPage = pageNo;
+        // };
+
+        $scope.pageChanged = function() {
+            console.log('Page changed to: ' + $scope.currentPage);
+            var urlParams = AppUtil.parseParams($location.$$url);
+            var appId = urlParams.appid;
+
+            var ss2 = urlParams.searchNameSpace;
+            var ss1 = urlParams.searchKeyValue;
+
+            if(ss1==null || ss1==undefined){
+                ss1 = ""
+            }
+            if(ss2==null || ss2==undefined){
+                ss2 = ""
+            }
+
+            console.log("pageChanged searchNameSpace: "+ss2);
+            console.log("pageChanged searchKeyValue: "+ss1);
+            console.log("pageChanged appId: "+appId);
+
+            pageNum = $scope.currentPage -1;
+            pageSize = 10;
+
+            console.log("pageChanged pageNum: "+pageNum);
+            console.log("pageChanged pageSize: "+pageSize);
+
+            ConfigService.load_all_namespaces_like_v2(appId,
+                $rootScope.pageContext.env,
+                $rootScope.pageContext.clusterName,
+                ss2,
+                ss1,
+                pageNum,
+                pageSize).then(
+                function (result) {
+                    console.log(result.namespaceBOList)
+                    $scope.namespaces = result.namespaceBOList;
+                    $('.config-item-container').removeClass('hide');
+
+                    initPublishInfo();
+                }, function (result) {
+                    toastr.error(AppUtil.errorMsg(result), "加载配置信息出错");
+                });
+
+        };
+
+        $scope.maxSize = 5;
     }
 
     function initRole() {
@@ -127,6 +183,8 @@ function controller($rootScope, $scope, toastr, AppUtil, $location, EventManager
     }
 
     function refreshAllNamespacesLike() {
+        $scope.currentPage = 1;
+
         var urlParams = AppUtil.parseParams($location.$$url);
         var appId = urlParams.appid;
 
@@ -151,21 +209,30 @@ function controller($rootScope, $scope, toastr, AppUtil, $location, EventManager
             return;
         }
 
+        pageNum = $scope.currentPage -1;
+        pageSize = 10;
+
         $rootScope.pageContext.appId = appId;
-        ConfigService.load_all_namespaces_like(appId,
+        ConfigService.load_all_namespaces_like_v2(appId,
             $rootScope.pageContext.env,
             $rootScope.pageContext.clusterName,
             ss2,
-            ss1).then(
+            ss1,
+            pageNum,
+            pageSize).then(
             function (result) {
 
-                $scope.namespaces = result;
+                $scope.namespaces = result.namespaceBOList;
+                $scope.totalItems = result.totalElements;
+                $scope.isShowPage = true;
+
                 $('.config-item-container').removeClass('hide');
 
                 initPublishInfo();
             }, function (result) {
                 toastr.error(AppUtil.errorMsg(result), "加载配置信息出错");
             });
+
     }
 
     function refreshSingleNamespace(namespace) {
