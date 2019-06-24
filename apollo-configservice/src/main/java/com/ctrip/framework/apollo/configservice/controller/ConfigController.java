@@ -79,7 +79,7 @@ public class ConfigController {
     //fix the character case issue, such as FX.apollo <-> fx.apollo
     namespace = namespaceUtil.normalizeNamespace(appId, namespace);
 
-    logger.info("===queryConfig====namespace: {}", namespace);
+    logger.info("===configs===queryConfig====namespace: {}", namespace);
     if (Strings.isNullOrEmpty(clientIp)) {
       clientIp = tryToGetClientIp(request);
     }
@@ -199,6 +199,8 @@ public class ConfigController {
 
   private void auditReleases(String appId, String cluster, String dataCenter, String clientIp,
                              List<Release> releases) {
+
+    logger.info("===auditReleases==={}", clientIp, releases);
     if (Strings.isNullOrEmpty(clientIp)) {
       //no need to audit instance config when there is no ip
       return;
