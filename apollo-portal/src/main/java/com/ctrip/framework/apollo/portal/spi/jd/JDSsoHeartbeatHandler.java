@@ -14,8 +14,8 @@ public class JDSsoHeartbeatHandler implements SsoHeartbeatHandler {
   @Override
   public void doHeartbeat(HttpServletRequest request, HttpServletResponse response) {
     try {
-      response.sendRedirect("ctrip_sso_heartbeat.html");
-    } catch (IOException e) {
+      response.sendRedirect("default_sso_heartbeat.html");
+    } catch (Exception e) {
     }
   }
 

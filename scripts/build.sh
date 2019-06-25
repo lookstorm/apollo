@@ -16,7 +16,7 @@ dev_meta=http://t.apollo-meta.jd.com
 #uat_meta=http://fill-in-uat-meta-server:8080
 pro_meta=http://apollo-meta.jd.com
 
-META_SERVERS_OPTS="-Ddev_meta=$dev_meta -Dfat_meta=$fat_meta -Duat_meta=$uat_meta -Dpro_meta=$pro_meta"
+META_SERVERS_OPTS="-Ddev_meta=$dev_meta -Dpro_meta=$pro_meta"
 
 # =============== Please do not modify the following content =============== #
 # go to script directory
@@ -33,6 +33,6 @@ echo "==== building config-service and admin-service finished ===="
 
 echo "==== starting to build portal ===="
 
-mvn clean package -DskipTests -pl apollo-portal -am -Dapollo_profile=github,auth -Dspring_datasource_url=$apollo_portal_db_url -Dspring_datasource_username=$apollo_portal_db_username -Dspring_datasource_password=$apollo_portal_db_password $META_SERVERS_OPTS
+mvn clean package -DskipTests -pl apollo-portal -am -Dapollo_profile=github,jd -Dspring_datasource_url=$apollo_portal_db_url -Dspring_datasource_username=$apollo_portal_db_username -Dspring_datasource_password=$apollo_portal_db_password $META_SERVERS_OPTS
 
 echo "==== building portal finished ===="

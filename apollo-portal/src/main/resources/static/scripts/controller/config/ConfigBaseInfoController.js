@@ -262,7 +262,7 @@ function ConfigBaseInfoController($rootScope, $scope, $window, $location, toastr
                                                                    cluster: $rootScope.pageContext.clusterName
                                                                }));
 
-                                            $window.location.href = "/config.html#/appid="
+                                            $window.location.href = "/config.html?#/appid="
                                                                     + $rootScope.pageContext.appId
                                                                     + "&env=" + $rootScope.pageContext.env
                                                                     + "&cluster=" + $rootScope.pageContext.clusterName;

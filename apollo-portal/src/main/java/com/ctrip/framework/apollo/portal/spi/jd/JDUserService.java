@@ -1,106 +1,99 @@
 package com.ctrip.framework.apollo.portal.spi.jd;
 
-import com.google.common.collect.Lists;
-
-import com.ctrip.framework.apollo.core.utils.StringUtils;
 import com.ctrip.framework.apollo.portal.entity.bo.UserInfo;
-import com.ctrip.framework.apollo.portal.entity.po.UserPO;
-import com.ctrip.framework.apollo.portal.repository.UserRepository;
 import com.ctrip.framework.apollo.portal.spi.UserService;
-
-import java.util.Collections;
+import com.google.common.collect.Lists;
+import com.jd.bdp.urm2.api.dto.JSFResultDTO;
+import com.jd.bdp.urm2.api.user.UrmUserInterface;
+import com.jd.bdp.urm2.domain.user.TblBaseUser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.JdbcUserDetailsManager;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.CollectionUtils;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
-
-import javax.annotation.PostConstruct;
 
 /**
  * @author lepdou 2017-03-10
  */
 public class JDUserService implements UserService {
+    private static final Logger logger = LoggerFactory.getLogger(JDUserService.class);
 
-  private PasswordEncoder encoder = new BCryptPasswordEncoder();
-  private List<GrantedAuthority> authorities;
+    @Autowired
+    private UrmUserInterface urmUserInterface;
 
-  @Autowired
-  private JdbcUserDetailsManager userDetailsManager;
-  @Autowired
-  private UserRepository userRepository;
+    @Override
+    public List<UserInfo> searchUsers(String keyword, int offset, int limit) {
+        List<UserInfo> result = Lists.newArrayList();
+        logger.info("===searchUsers===");
 
-  @PostConstruct
-  public void init() {
-    authorities = new ArrayList<>();
-    authorities.add(new SimpleGrantedAuthority("ROLE_user"));
-  }
+        TblBaseUser tblBaseUser = new TblBaseUser();
+        tblBaseUser.setSearchValue(keyword);
+        tblBaseUser.setLimit(limit);
+        tblBaseUser.setStart(offset);
+        tblBaseUser.setOperator("xn_bdp");
 
-  @Transactional
-  public void createOrUpdate(UserPO user) {
-    String username = user.getUsername();
+        JSFResultDTO<TblBaseUser> jsfResultDTO = urmUserInterface.listByKeywords("bdp.jd.com", "RQLMPXULF3EG23CPZL3U257B7Y", System.currentTimeMillis(), tblBaseUser);
+        List<TblBaseUser> dataList = jsfResultDTO.getList();
+        if (null != dataList) {
+            for (TblBaseUser tmp : dataList) {
+                UserInfo userInfo = new UserInfo();
+                userInfo.setName(tmp.getName());
+                userInfo.setUserId(tmp.getErp());
+                userInfo.setEmail(tmp.getEmail());
 
-    User userDetails = new User(username, encoder.encode(user.getPassword()), authorities);
+                result.add(userInfo);
+            }
+        }
 
-    if (userDetailsManager.userExists(username)) {
-      userDetailsManager.updateUser(userDetails);
-    } else {
-      userDetailsManager.createUser(userDetails);
+
+        return result;
     }
 
-    UserPO managedUser = userRepository.findByUsername(username);
-    managedUser.setEmail(user.getEmail());
+    @Override
+    public UserInfo findByUserId(String userId) {
+        logger.info("===findByUserId===");
+        TblBaseUser tblBaseUser = new TblBaseUser();
+        tblBaseUser.setOperator("xn_bdp");
+        tblBaseUser.setLoginName(userId);
+        JSFResultDTO<TblBaseUser> resultDTO = urmUserInterface.get("bdp.jd.com", "RQLMPXULF3EG23CPZL3U257B7Y", System.currentTimeMillis(), tblBaseUser);
 
-    userRepository.save(managedUser);
-  }
+        TblBaseUser tmp = resultDTO.getObj();
 
-  @Override
-  public List<UserInfo> searchUsers(String keyword, int offset, int limit) {
-    List<UserPO> users;
-    if (StringUtils.isEmpty(keyword)) {
-      users = userRepository.findFirst20ByEnabled(1);
-    } else {
-      users = userRepository.findByUsernameLikeAndEnabled("%" + keyword + "%", 1);
+        UserInfo userInfo = new UserInfo();
+
+        if (null != tmp) {
+            userInfo.setName(tmp.getName());
+            userInfo.setUserId(tmp.getErp());
+            userInfo.setEmail(tmp.getEmail());
+        }
+
+        return userInfo;
     }
 
-    List<UserInfo> result = Lists.newArrayList();
-    if (CollectionUtils.isEmpty(users)) {
-      return result;
+    @Override
+    public List<UserInfo> findByUserIds(List<String> userIds) {
+        logger.info("===findByUserIds===");
+        List<UserInfo> result = Lists.newArrayList();
+        for (String id : userIds) {
+            TblBaseUser tblBaseUser = new TblBaseUser();
+            tblBaseUser.setOperator("xn_bdp");
+            tblBaseUser.setLoginName(id);
+            JSFResultDTO<TblBaseUser> resultDTO = urmUserInterface.get("bdp.jd.com", "RQLMPXULF3EG23CPZL3U257B7Y", System.currentTimeMillis(), tblBaseUser);
+
+            TblBaseUser tmp = resultDTO.getObj();
+
+            UserInfo userInfo = new UserInfo();
+
+            if (null != tmp) {
+                userInfo.setName(tmp.getName());
+                userInfo.setUserId(tmp.getErp());
+                userInfo.setEmail(tmp.getEmail());
+
+                result.add(userInfo);
+            }
+        }
+        return result;
     }
-
-    result.addAll(users.stream().map(UserPO::toUserInfo).collect(Collectors.toList()));
-
-    return result;
-  }
-
-  @Override
-  public UserInfo findByUserId(String userId) {
-    UserPO userPO = userRepository.findByUsername(userId);
-    return userPO == null ? null : userPO.toUserInfo();
-  }
-
-  @Override
-  public List<UserInfo> findByUserIds(List<String> userIds) {
-    List<UserPO> users = userRepository.findByUsernameIn(userIds);
-
-    if (CollectionUtils.isEmpty(users)) {
-      return Collections.emptyList();
-    }
-
-    List<UserInfo> result = Lists.newArrayList();
-
-    result.addAll(users.stream().map(UserPO::toUserInfo).collect(Collectors.toList()));
-
-    return result;
-  }
 
 
 }

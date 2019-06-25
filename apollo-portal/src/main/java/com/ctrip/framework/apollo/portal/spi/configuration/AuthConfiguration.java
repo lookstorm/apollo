@@ -15,6 +15,8 @@ import com.ctrip.framework.apollo.portal.spi.defaultimpl.DefaultLogoutHandler;
 import com.ctrip.framework.apollo.portal.spi.defaultimpl.DefaultSsoHeartbeatHandler;
 import com.ctrip.framework.apollo.portal.spi.defaultimpl.DefaultUserInfoHolder;
 import com.ctrip.framework.apollo.portal.spi.defaultimpl.DefaultUserService;
+import com.ctrip.framework.apollo.portal.spi.jd.JDLogoutHandler;
+import com.ctrip.framework.apollo.portal.spi.jd.JDSsoHeartbeatHandler;
 import com.ctrip.framework.apollo.portal.spi.jd.JDUserInfoHolder;
 import com.ctrip.framework.apollo.portal.spi.jd.JDUserService;
 import com.ctrip.framework.apollo.portal.spi.ldap.FilterLdapByGroupUserSearch;
@@ -68,7 +70,7 @@ public class AuthConfiguration {
     @Bean
     @ConditionalOnMissingBean(SsoHeartbeatHandler.class)
     public SsoHeartbeatHandler defaultSsoHeartbeatHandler() {
-      return new DefaultSsoHeartbeatHandler();
+      return new JDSsoHeartbeatHandler();
     }
 
     @Bean
@@ -80,33 +82,7 @@ public class AuthConfiguration {
     @Bean
     @ConditionalOnMissingBean(LogoutHandler.class)
     public LogoutHandler logoutHandler() {
-      return new DefaultLogoutHandler();
-    }
-
-    @Bean
-    public JdbcUserDetailsManager jdbcUserDetailsManager(AuthenticationManagerBuilder auth,
-                                                         DataSource datasource) throws Exception {
-      JdbcUserDetailsManager jdbcUserDetailsManager = auth.jdbcAuthentication()
-              .passwordEncoder(new BCryptPasswordEncoder()).dataSource(datasource)
-              .usersByUsernameQuery("select Username,Password,Enabled from `Users` where Username = ?")
-              .authoritiesByUsernameQuery(
-                      "select Username,Authority from `Authorities` where Username = ?")
-              .getUserDetailsService();
-
-      jdbcUserDetailsManager.setUserExistsSql("select Username from `Users` where Username = ?");
-      jdbcUserDetailsManager
-              .setCreateUserSql("insert into `Users` (Username, Password, Enabled) values (?,?,?)");
-      jdbcUserDetailsManager
-              .setUpdateUserSql("update `Users` set Password = ?, Enabled = ? where id = (select u.id from (select id from `Users` where Username = ?) as u)");
-      jdbcUserDetailsManager.setDeleteUserSql("delete from `Users` where id = (select u.id from (select id from `Users` where Username = ?) as u)");
-      jdbcUserDetailsManager
-              .setCreateAuthoritySql("insert into `Authorities` (Username, Authority) values (?,?)");
-      jdbcUserDetailsManager
-              .setDeleteUserAuthoritiesSql("delete from `Authorities` where id = (select u.id from (select id from `Users` where Username = ?) as u)");
-      jdbcUserDetailsManager
-              .setChangePasswordSql("update `Users` set Password = ? where id = (select u.id from (select id from `Users` where Username = ?) as u)");
-
-      return jdbcUserDetailsManager;
+      return new JDLogoutHandler();
     }
 
     @Bean
@@ -313,6 +289,32 @@ public class AuthConfiguration {
     @ConditionalOnMissingBean(UserService.class)
     public UserService springSecurityUserService() {
       return new SpringSecurityUserService();
+    }
+
+  }
+
+  @Order(99)
+  @Profile("jd")
+  @Configuration
+  @EnableWebSecurity
+  @EnableGlobalMethodSecurity(prePostEnabled = true)
+  static class JDSecurityConfigurer extends WebSecurityConfigurerAdapter {
+
+    public static final String USER_ROLE = "user";
+
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+      http.csrf().disable();
+      http.headers().frameOptions().sameOrigin();
+//      http.authorizeRequests()
+//              .antMatchers("/openapi/**", "/vendor/**", "/styles/**", "/scripts/**", "/views/**", "/img/**").permitAll()
+//              .antMatchers("/**").hasAnyRole(USER_ROLE);
+//      http.formLogin().loginPage("/").permitAll().failureUrl("/?#/error").and().httpBasic();
+//      SimpleUrlLogoutSuccessHandler urlLogoutHandler = new SimpleUrlLogoutSuccessHandler();
+//      urlLogoutHandler.setDefaultTargetUrl("/?#/logout");
+//      http.logout().logoutUrl("/user/logout").invalidateHttpSession(true).clearAuthentication(true)
+//              .logoutSuccessHandler(urlLogoutHandler);
+//      http.exceptionHandling().authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/"));
     }
 
   }

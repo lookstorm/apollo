@@ -28,9 +28,8 @@ sso:
   auth:
     cookie:
       domain: .jd.com
-
-exclude:
-  path: /static,/openapi,/vendor,/styles,/scripts,/views,/img
+  exclude:
+    path: /static,/openapi,/vendor,/styles,/scripts,/views,/img
 
 login:
   address: http://test.ssa.jd.com/sso/login

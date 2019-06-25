@@ -11,21 +11,42 @@
        http://jsf.jd.com/schema/jsf/jsf.xsd">
 
 
+    <jsf:registry id="jsfRegistry" protocol="jsfRegistry" index="i.jsf.jd.com"/>
     <!-- 单点登录JSF服务接口 -->
-    <jsf:consumer id="ssoService" interface="com.jd.ssa.service.SsoService" protocol="jsf" alias="v1" timeout="10000"/>
-    <!-- 单点登录springmvc 拦截器bean -->
-    <bean id="springSSOInterceptor" class="com.jd.common.springmvc.interceptor.SpringSSOInterceptor">
-        <property name="loginUrl" value="${login.address}"/>
-        <property name="excludePath" value="${sso.exclude.path}"/>
-        <property name="ssoService" ref="ssoService"/>
-    </bean>
-
-    <!-- 单点登录拦截器配置 -->
+    <jsf:consumer id="ssoService"
+                  interface="com.jd.ssa.service.SsoService" protocol="jsf"
+                  alias="v1" timeout="10000"/>
+    <jsf:consumer id="urmUserInterface"
+                  interface="com.jd.bdp.urm2.api.user.UrmUserInterface" protocol="jsf"
+                  alias="user-api" timeout="20000" >
+    </jsf:consumer>
     <mvc:interceptors>
+
+        <!--单点登录拦截器 -->
         <mvc:interceptor>
-            <mvc:mapping path="/**"/>
-            <ref bean="springSSOInterceptor"/>
+            <mvc:mapping path="/**" />
+            <!-- 单点登录springmvc 拦截器bean -->
+            <bean id="springSSOInterceptor"
+                  class="com.jd.common.springmvc.interceptor.SpringSSOInterceptor">
+                <property name="appDomainName" value="jdapollo.jd.com" />
+                <property name="appHomeUrl" value="http://jdapollo.jd.com/" />
+                <property name="loginUrl" value="http://ssa.jd.com/sso/login" />
+                <property name="ssoDomainName" value="jdapollo.jd.com" />
+                <property name="excludePath" value="/static,/openapi,/vendor,/styles,/scripts,/views,/img" />
+                <property name="ssoService" ref="ssoService" />
+            </bean>
         </mvc:interceptor>
+
+        <!--单点登录拦截器
+        <mvc:interceptor>
+            <mvc:mapping path="/**" />
+            <bean id="springSSOInterceptor"
+                  class="com.jd.common.springmvc.interceptor.SpringSSOInterceptor">
+                <property name="loginUrl" value="http://ssa.jd.com/sso/login" />
+                <property name="excludePath" value="/static,/openapi,/vendor,/styles,/scripts,/views,/img" />
+                <property name="ssoService" ref="ssoService" />
+            </bean>
+        </mvc:interceptor>-->
     </mvc:interceptors>
 
 </beans>

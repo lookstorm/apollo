@@ -23,6 +23,12 @@ public class JDLogoutHandler implements LogoutHandler {
       session.invalidate();
     }
 
+    try {
+      response.sendRedirect("http://ssa.jd.com/sso/logout?ReturnUrl=http://t.jdapollo.jd.com");
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+
 //    Cookie cookie = new Cookie("memCacheAssertionID", null);
 //    //将cookie的有效期设置为0，命令浏览器删除该cookie
 //    cookie.setMaxAge(0);
