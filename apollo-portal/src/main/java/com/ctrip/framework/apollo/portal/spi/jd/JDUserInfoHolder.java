@@ -12,25 +12,32 @@ import org.slf4j.LoggerFactory;
  */
 public class JDUserInfoHolder implements UserInfoHolder {
 
-  private static final Logger logger = LoggerFactory.getLogger(JDUserInfoHolder.class);
+    private static final Logger logger = LoggerFactory.getLogger(JDUserInfoHolder.class);
 
-  public JDUserInfoHolder() {
-  }
-
-  @Override
-  public UserInfo getUser() {
-    try {
-
-      LoginContext loginContext = LoginContext.getLoginContext();
-      logger.info("loginContext==={}", JSONObject.toJSONString(loginContext));
-
-      UserInfo userInfo = new UserInfo();
-      userInfo.setUserId(loginContext.getPin());
-
-      return userInfo;
-    } catch (Exception e) {
-      throw new RuntimeException("get user info from assertion holder error", e);
+    public JDUserInfoHolder() {
     }
-  }
+
+    private String COMMON_ADMIN = "xn_bdp";
+
+    @Override
+    public UserInfo getUser() {
+        try {
+
+            LoginContext loginContext = LoginContext.getLoginContext();
+            logger.info("loginContext==={}", JSONObject.toJSONString(loginContext));
+
+            UserInfo userInfo = new UserInfo();
+
+            if (null == loginContext) {
+                userInfo.setUserId(COMMON_ADMIN);
+            } else {
+                userInfo.setUserId(loginContext.getPin());
+            }
+
+            return userInfo;
+        } catch (Exception e) {
+            throw new RuntimeException("get user info from assertion holder error", e);
+        }
+    }
 
 }
