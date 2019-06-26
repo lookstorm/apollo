@@ -28,10 +28,10 @@
             <!-- 单点登录springmvc 拦截器bean -->
             <bean id="springSSOInterceptor"
                   class="com.jd.common.springmvc.interceptor.SpringSSOInterceptor">
-                <property name="appDomainName" value="t.jdapollo.jd.com" />
-                <property name="appHomeUrl" value="http://t.jdapollo.jd.com/" />
+                <property name="appDomainName" value="jdapollo.jd.com" />
+                <property name="appHomeUrl" value="http://jdapollo.jd.com/" />
                 <property name="loginUrl" value="http://ssa.jd.com/sso/login" />
-                <property name="ssoDomainName" value="t.jdapollo.jd.com" />
+                <property name="ssoDomainName" value="jdapollo.jd.com" />
                 <property name="excludePath" value="/static,/openapi,/vendor,/styles,/scripts,/views,/img" />
                 <property name="ssoService" ref="ssoService" />
             </bean>

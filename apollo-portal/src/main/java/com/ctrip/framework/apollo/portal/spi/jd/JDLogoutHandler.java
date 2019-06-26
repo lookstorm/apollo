@@ -24,7 +24,7 @@ public class JDLogoutHandler implements LogoutHandler {
     }
 
     try {
-      response.sendRedirect("http://ssa.jd.com/sso/logout?ReturnUrl=http://t.jdapollo.jd.com");
+      response.sendRedirect("http://ssa.jd.com/sso/logout?ReturnUrl=http://jdapollo.jd.com");
     } catch (IOException e) {
       e.printStackTrace();
     }
