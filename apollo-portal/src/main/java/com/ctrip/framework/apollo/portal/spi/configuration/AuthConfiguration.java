@@ -63,7 +63,7 @@ public class AuthConfiguration {
   /**
    * spring.profiles.active = jd
    */
-  @Configuration
+   @Configuration
   @Profile("jd")
   static class JDAuthAutoConfiguration {
 

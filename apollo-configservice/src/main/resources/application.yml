@@ -9,6 +9,9 @@ ctrip:
 
 server:
   port: 8080
+  tomcat:
+    max-connections: 10000
+    max-threads: 512
 
 logging:
   file: /opt/logs/100003171/apollo-configservice.log
