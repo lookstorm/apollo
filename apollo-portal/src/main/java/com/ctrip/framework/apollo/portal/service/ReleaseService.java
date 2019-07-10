@@ -17,9 +17,13 @@ import com.ctrip.framework.apollo.portal.spi.UserInfoHolder;
 import com.ctrip.framework.apollo.tracer.Tracer;
 import com.google.common.base.Objects;
 import com.google.gson.Gson;
+import com.jd.jim.cli.Cluster;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
+import javax.annotation.Resource;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -32,10 +36,15 @@ import java.util.Set;
 @Service
 public class ReleaseService {
 
+  private static final Logger logger = LoggerFactory.getLogger(ReleaseService.class);
+
   private static final Gson gson = new Gson();
 
   private final UserInfoHolder userInfoHolder;
   private final AdminServiceAPI.ReleaseAPI releaseAPI;
+
+  @Resource(name = "jimClient")
+  private Cluster jimClient;
 
   public ReleaseService(final UserInfoHolder userInfoHolder, final AdminServiceAPI.ReleaseAPI releaseAPI) {
     this.userInfoHolder = userInfoHolder;
@@ -50,6 +59,10 @@ public class ReleaseService {
     String namespaceName = model.getNamespaceName();
     String releaseBy = StringUtils.isEmpty(model.getReleasedBy()) ?
                        userInfoHolder.getUser().getUserId() : model.getReleasedBy();
+
+    String cacheKey = String.format("rl_%s_%s_%s", appId, clusterName, namespaceName);
+    logger.info("===publish===clear===cacheKey: {}", cacheKey);
+    jimClient.del(cacheKey);
 
     ReleaseDTO releaseDTO = releaseAPI.createRelease(appId, env, clusterName, namespaceName,
                                                      model.getReleaseTitle(), model.getReleaseComment(),
@@ -68,6 +81,10 @@ public class ReleaseService {
     String appId = model.getAppId();
     String clusterName = model.getClusterName();
     String namespaceName = model.getNamespaceName();
+
+    String cacheKey = String.format("acv_%s_%s_%s", appId, clusterName, namespaceName);
+    logger.info("===graypublish===clear===cacheKey: {}", cacheKey);
+    jimClient.del(cacheKey);
 
     ReleaseDTO releaseDTO = releaseAPI.createGrayDeletionRelease(appId, env, clusterName, namespaceName,
             model.getReleaseTitle(), model.getReleaseComment(),

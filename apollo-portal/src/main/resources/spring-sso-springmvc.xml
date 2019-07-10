@@ -20,6 +20,11 @@
                   interface="com.jd.bdp.urm2.api.user.UrmUserInterface" protocol="jsf"
                   alias="user-api" timeout="20000" >
     </jsf:consumer>
+
+    <bean id="jimClient" class="com.jd.jim.cli.ReloadableJimClientFactoryBean">
+        <property name="jimUrl" value="jim://3004391043487490065/8419" />
+    </bean>
+
     <mvc:interceptors>
 
         <!--单点登录拦截器 -->

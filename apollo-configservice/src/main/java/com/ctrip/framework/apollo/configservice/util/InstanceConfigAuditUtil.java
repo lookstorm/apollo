@@ -66,7 +66,7 @@ public class InstanceConfigAuditUtil implements InitializingBean {
                 configAppId, configClusterName, configNamespace, releaseKey));
     }
 
-    synchronized void doAudit(InstanceConfigAuditModel auditModel) {
+    void doAudit(InstanceConfigAuditModel auditModel) {
         String instanceCacheKey = assembleInstanceKey(auditModel.getAppId(), auditModel
                 .getClusterName(), auditModel.getIp(), auditModel.getDataCenter());
         Long instanceId = instanceCache.getIfPresent(instanceCacheKey);
@@ -81,7 +81,7 @@ public class InstanceConfigAuditUtil implements InitializingBean {
         String cacheReleaseKey = instanceConfigReleaseKeyCache.getIfPresent(instanceConfigCacheKey);
 
         //if release key is the same, then skip audit
-        logger.info("===doAuditresult==={}, {}, {}, {}, {}", auditModel.getConfigNamespace(), cacheReleaseKey, auditModel.getReleaseKey(), (cacheReleaseKey != null), (Objects.equals(cacheReleaseKey, auditModel.getReleaseKey())));
+        logger.info("===doAuditresult==={}, {}, {}, {}, {}, {}", auditModel.getIp(), auditModel.getConfigNamespace(), cacheReleaseKey, auditModel.getReleaseKey(), (cacheReleaseKey != null), (Objects.equals(cacheReleaseKey, auditModel.getReleaseKey())));
         if (cacheReleaseKey != null && Objects.equals(cacheReleaseKey, auditModel.getReleaseKey())) {
             return;
         }
