@@ -35,7 +35,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class InstanceConfigAuditUtil implements InitializingBean {
     private static final Logger logger = LoggerFactory.getLogger(InstanceConfigAuditUtil.class);
 
-    private static final int INSTANCE_CONFIG_AUDIT_MAX_SIZE = 10000;
+    private static final int INSTANCE_CONFIG_AUDIT_MAX_SIZE = 100000;
     private static final int INSTANCE_CACHE_MAX_SIZE = 50000;
     private static final int INSTANCE_CONFIG_CACHE_MAX_SIZE = 50000;
     private static final long OFFER_TIME_LAST_MODIFIED_TIME_THRESHOLD_IN_MILLI = TimeUnit.MINUTES.toMillis(10);//10 minutes
@@ -60,6 +60,14 @@ public class InstanceConfigAuditUtil implements InitializingBean {
                 .maximumSize(INSTANCE_CONFIG_CACHE_MAX_SIZE).build();
     }
 
+    public BlockingQueue<InstanceConfigAuditModel> getAudits() {
+        return audits;
+    }
+
+    public void setAudits(BlockingQueue<InstanceConfigAuditModel> audits) {
+        this.audits = audits;
+    }
+
     public boolean audit(String appId, String clusterName, String dataCenter, String
             ip, String configAppId, String configClusterName, String configNamespace, String releaseKey) {
         return this.audits.offer(new InstanceConfigAuditModel(appId, clusterName, dataCenter, ip,
@@ -81,7 +89,7 @@ public class InstanceConfigAuditUtil implements InitializingBean {
         String cacheReleaseKey = instanceConfigReleaseKeyCache.getIfPresent(instanceConfigCacheKey);
 
         //if release key is the same, then skip audit
-        logger.info("===doAuditresult==={}, {}, {}, {}, {}, {}", auditModel.getIp(), auditModel.getConfigNamespace(), cacheReleaseKey, auditModel.getReleaseKey(), (cacheReleaseKey != null), (Objects.equals(cacheReleaseKey, auditModel.getReleaseKey())));
+        //logger.info("===doAuditresultv1==={}, {}, {}, {}, {}, {}", auditModel.getIp(), auditModel.getConfigNamespace(), cacheReleaseKey, auditModel.getReleaseKey(), (cacheReleaseKey != null), (Objects.equals(cacheReleaseKey, auditModel.getReleaseKey())));
         if (cacheReleaseKey != null && Objects.equals(cacheReleaseKey, auditModel.getReleaseKey())) {
             return;
         }
@@ -169,6 +177,7 @@ public class InstanceConfigAuditUtil implements InitializingBean {
                         TimeUnit.SECONDS.sleep(1);
                         continue;
                     }
+
                     doAudit(model);
                 } catch (Throwable ex) {
                     Tracer.logError(ex);

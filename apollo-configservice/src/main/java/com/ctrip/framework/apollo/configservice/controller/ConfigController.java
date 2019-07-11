@@ -80,6 +80,7 @@ public class ConfigController {
     public JSONObject concurrentCall() {
         JSONObject result = new JSONObject();
         result.put("concurrentCall", AnalyticCall.get());
+        result.put("auditCount", instanceConfigAuditUtil.getAudits().size());
         return result;
     }
 
@@ -109,7 +110,6 @@ public class ConfigController {
             ApolloNotificationMessages clientMessages = transformMessages(messagesAsString);
 
             String cacheKey = String.format("rl_%s_%s_%s", appId, clusterName, namespace);
-            logger.info("===configs===cacheKey: {}", cacheKey);
 
             String cacheValue = jimClient.get(cacheKey);
 
@@ -338,7 +338,7 @@ public class ConfigController {
     private void auditReleases(String appId, String cluster, String dataCenter, String clientIp,
                                List<Release> releases) {
 
-        logger.info("===auditReleases==={}", clientIp, releases);
+        logger.info("===auditReleasesv1==={}", clientIp);
         if (Strings.isNullOrEmpty(clientIp)) {
             //no need to audit instance config when there is no ip
             return;
