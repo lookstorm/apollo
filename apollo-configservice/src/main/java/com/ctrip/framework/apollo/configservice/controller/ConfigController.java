@@ -76,11 +76,11 @@ public class ConfigController {
         this.gson = gson;
     }
 
-    @GetMapping(value = "/concurrentCall")
-    public JSONObject concurrentCall() {
+    @GetMapping(value = "/analytics")
+    public JSONObject analytics() {
         JSONObject result = new JSONObject();
-        result.put("concurrentCall", AnalyticCall.get());
-        result.put("auditCount", instanceConfigAuditUtil.getAudits().size());
+        result.put("concurrent", AnalyticCall.get());
+        result.put("auditCount", jimClient.lLen(InstanceConfigAuditUtil.apolloServerIp));
         return result;
     }
 
@@ -166,7 +166,7 @@ public class ConfigController {
                     return apolloConfig;
                 } else {
                     //todo remove for online
-                    logger.info("Hited cache for the key: {}", cacheKey);
+                    //logger.info("Hited cache for the key: {}", cacheKey);
                     releases = JSONObject.parseArray(cacheValue, Release.class);
                 }
             }
@@ -202,7 +202,7 @@ public class ConfigController {
 
     }
 
-
+    @Deprecated
     @GetMapping(value = "/{appId}/{clusterName}/{namespace}")
     public ApolloConfig queryConfig(@PathVariable String appId, @PathVariable String clusterName,
                                     @PathVariable String namespace,
@@ -211,72 +211,9 @@ public class ConfigController {
                                     @RequestParam(value = "ip", required = false) String clientIp,
                                     @RequestParam(value = "messages", required = false) String messagesAsString,
                                     HttpServletRequest request, HttpServletResponse response) throws IOException {
-        String originalNamespace = namespace;
-        //strip out .properties suffix
-        namespace = namespaceUtil.filterNamespaceName(namespace);
-        //fix the character case issue, such as FX.apollo <-> fx.apollo
-        namespace = namespaceUtil.normalizeNamespace(appId, namespace);
 
-        logger.info("===configs===queryConfig====namespace: {}", namespace);
-        if (Strings.isNullOrEmpty(clientIp)) {
-            clientIp = tryToGetClientIp(request);
-        }
-
-        ApolloNotificationMessages clientMessages = transformMessages(messagesAsString);
-
-        List<Release> releases = Lists.newLinkedList();
-
-        String appClusterNameLoaded = clusterName;
-        if (!ConfigConsts.NO_APPID_PLACEHOLDER.equalsIgnoreCase(appId)) {
-            Release currentAppRelease = configService.loadConfig(appId, clientIp, appId, clusterName, namespace,
-                    dataCenter, clientMessages);
-
-            if (currentAppRelease != null) {
-                releases.add(currentAppRelease);
-                //we have cluster search process, so the cluster name might be overridden
-                appClusterNameLoaded = currentAppRelease.getClusterName();
-            }
-        }
-
-        //if namespace does not belong to this appId, should check if there is a public configuration
-        if (!namespaceBelongsToAppId(appId, namespace)) {
-            Release publicRelease = this.findPublicConfig(appId, clientIp, clusterName, namespace,
-                    dataCenter, clientMessages);
-            if (!Objects.isNull(publicRelease)) {
-                releases.add(publicRelease);
-            }
-        }
-
-        if (releases.isEmpty()) {
-            response.sendError(HttpServletResponse.SC_NOT_FOUND,
-                    String.format(
-                            "Could not load configurations with appId: %s, clusterName: %s, namespace: %s",
-                            appId, clusterName, originalNamespace));
-            Tracer.logEvent("Apollo.Config.NotFound",
-                    assembleKey(appId, clusterName, originalNamespace, dataCenter));
-            return null;
-        }
-
-        auditReleases(appId, clusterName, dataCenter, clientIp, releases);
-
-        String mergedReleaseKey = releases.stream().map(Release::getReleaseKey)
-                .collect(Collectors.joining(ConfigConsts.CLUSTER_NAMESPACE_SEPARATOR));
-
-        if (mergedReleaseKey.equals(clientSideReleaseKey)) {
-            // Client side configuration is the same with server side, return 304
-            response.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
-            Tracer.logEvent("Apollo.Config.NotModified",
-                    assembleKey(appId, appClusterNameLoaded, originalNamespace, dataCenter));
-            return null;
-        }
-
-        ApolloConfig apolloConfig = new ApolloConfig(appId, appClusterNameLoaded, originalNamespace,
-                mergedReleaseKey);
-        apolloConfig.setConfigurations(mergeReleaseConfigurations(releases));
-
-        Tracer.logEvent("Apollo.Config.Found", assembleKey(appId, appClusterNameLoaded,
-                originalNamespace, dataCenter));
-        return apolloConfig;
+        logger.info("Access Deprecated Configs.");
+        return queryConfigV1(appId, clusterName, namespace, dataCenter, clientSideReleaseKey, clientIp, messagesAsString, request, response);
     }
 
     private boolean namespaceBelongsToAppId(String appId, String namespaceName) {
@@ -338,7 +275,7 @@ public class ConfigController {
     private void auditReleases(String appId, String cluster, String dataCenter, String clientIp,
                                List<Release> releases) {
 
-        logger.info("===auditReleasesv1==={}", clientIp);
+        //logger.info("===auditReleasesv1==={}", clientIp);
         if (Strings.isNullOrEmpty(clientIp)) {
             //no need to audit instance config when there is no ip
             return;

@@ -82,7 +82,7 @@ public class ReleaseService {
     String clusterName = model.getClusterName();
     String namespaceName = model.getNamespaceName();
 
-    String cacheKey = String.format("acv_%s_%s_%s", appId, clusterName, namespaceName);
+    String cacheKey = String.format("rl_%s_%s_%s", appId, clusterName, namespaceName);
     logger.info("===graypublish===clear===cacheKey: {}", cacheKey);
     jimClient.del(cacheKey);
 

@@ -1,5 +1,6 @@
 package com.ctrip.framework.apollo.configservice.util;
 
+import com.alibaba.fastjson.JSONObject;
 import com.ctrip.framework.apollo.biz.entity.Instance;
 import com.ctrip.framework.apollo.biz.entity.InstanceConfig;
 import com.ctrip.framework.apollo.biz.service.InstanceService;
@@ -7,25 +8,26 @@ import com.ctrip.framework.apollo.configservice.controller.NotificationControlle
 import com.ctrip.framework.apollo.core.ConfigConsts;
 import com.ctrip.framework.apollo.core.utils.ApolloThreadFactory;
 import com.ctrip.framework.apollo.tracer.Tracer;
+import com.ctrip.framework.foundation.Foundation;
 import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Queues;
+import com.jd.jim.cli.Cluster;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Resource;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -38,7 +40,7 @@ public class InstanceConfigAuditUtil implements InitializingBean {
     private static final int INSTANCE_CONFIG_AUDIT_MAX_SIZE = 100000;
     private static final int INSTANCE_CACHE_MAX_SIZE = 50000;
     private static final int INSTANCE_CONFIG_CACHE_MAX_SIZE = 50000;
-    private static final long OFFER_TIME_LAST_MODIFIED_TIME_THRESHOLD_IN_MILLI = TimeUnit.MINUTES.toMillis(10);//10 minutes
+    private static final long OFFER_TIME_LAST_MODIFIED_TIME_THRESHOLD_IN_MILLI = TimeUnit.HOURS.toMillis(20);
     private static final Joiner STRING_JOINER = Joiner.on(ConfigConsts.CLUSTER_NAMESPACE_SEPARATOR);
     private final ExecutorService auditExecutorService;
     private final AtomicBoolean auditStopped;
@@ -49,9 +51,14 @@ public class InstanceConfigAuditUtil implements InitializingBean {
 
     private final InstanceService instanceService;
 
+    @Resource(name = "jimClient")
+    private Cluster jimClient;
+
+    public static final String apolloServerIp = Foundation.net().getHostAddress();
+
     public InstanceConfigAuditUtil(final InstanceService instanceService) {
         this.instanceService = instanceService;
-        auditExecutorService = Executors.newSingleThreadExecutor(
+        auditExecutorService = Executors.newFixedThreadPool(5,
                 ApolloThreadFactory.create("InstanceConfigAuditUtil", true));
         auditStopped = new AtomicBoolean(false);
         instanceCache = CacheBuilder.newBuilder().expireAfterAccess(1, TimeUnit.HOURS)
@@ -70,8 +77,14 @@ public class InstanceConfigAuditUtil implements InitializingBean {
 
     public boolean audit(String appId, String clusterName, String dataCenter, String
             ip, String configAppId, String configClusterName, String configNamespace, String releaseKey) {
-        return this.audits.offer(new InstanceConfigAuditModel(appId, clusterName, dataCenter, ip,
-                configAppId, configClusterName, configNamespace, releaseKey));
+
+        InstanceConfigAuditModel instanceConfigAuditModel = new InstanceConfigAuditModel(appId, clusterName, dataCenter, ip,
+                configAppId, configClusterName, configNamespace, releaseKey);
+
+        jimClient.lPush(apolloServerIp, JSONObject.toJSONString(instanceConfigAuditModel));
+        return true;
+//        return this.audits.offer(new InstanceConfigAuditModel(appId, clusterName, dataCenter, ip,
+//                configAppId, configClusterName, configNamespace, releaseKey));
     }
 
     void doAudit(InstanceConfigAuditModel auditModel) {
@@ -82,14 +95,13 @@ public class InstanceConfigAuditUtil implements InitializingBean {
             instanceId = prepareInstanceId(auditModel);
             instanceCache.put(instanceCacheKey, instanceId);
         }
-
         //load instance config release key from cache, and check if release key is the same
         String instanceConfigCacheKey = assembleInstanceConfigKey(instanceId, auditModel
                 .getConfigAppId(), auditModel.getConfigNamespace());
         String cacheReleaseKey = instanceConfigReleaseKeyCache.getIfPresent(instanceConfigCacheKey);
 
         //if release key is the same, then skip audit
-        //logger.info("===doAuditresultv1==={}, {}, {}, {}, {}, {}", auditModel.getIp(), auditModel.getConfigNamespace(), cacheReleaseKey, auditModel.getReleaseKey(), (cacheReleaseKey != null), (Objects.equals(cacheReleaseKey, auditModel.getReleaseKey())));
+        //logger.info("===doAudit==={}, {}, {}, {}, {}, {}", auditModel.getIp(), auditModel.getConfigNamespace(), cacheReleaseKey, auditModel.getReleaseKey(), (cacheReleaseKey != null), (Objects.equals(cacheReleaseKey, auditModel.getReleaseKey())));
         if (cacheReleaseKey != null && Objects.equals(cacheReleaseKey, auditModel.getReleaseKey())) {
             return;
         }
@@ -115,24 +127,22 @@ public class InstanceConfigAuditUtil implements InitializingBean {
             instanceService.updateInstanceConfig(instanceConfig);
             return;
         } else {
-            logger.info("===doAudit===instanceConfig==={}, {}", auditModel.getConfigNamespace(), instanceConfig);
+            logger.info("===doAudit===instanceConfig==={}", auditModel.getConfigNamespace());
         }
 
-        instanceConfig = new InstanceConfig();
-        instanceConfig.setInstanceId(instanceId);
-        instanceConfig.setConfigAppId(auditModel.getConfigAppId());
-        instanceConfig.setConfigClusterName(auditModel.getConfigClusterName());
-        instanceConfig.setConfigNamespaceName(auditModel.getConfigNamespace());
-        instanceConfig.setReleaseKey(auditModel.getReleaseKey());
-        instanceConfig.setReleaseDeliveryTime(auditModel.getOfferTime());
-        instanceConfig.setDataChangeCreatedTime(auditModel.getOfferTime());
+        InstanceConfig instanceConfigNew = new InstanceConfig();
+        instanceConfigNew.setInstanceId(instanceId);
+        instanceConfigNew.setConfigAppId(auditModel.getConfigAppId());
+        instanceConfigNew.setConfigClusterName(auditModel.getConfigClusterName());
+        instanceConfigNew.setConfigNamespaceName(auditModel.getConfigNamespace());
+        instanceConfigNew.setReleaseKey(auditModel.getReleaseKey());
+        instanceConfigNew.setReleaseDeliveryTime(auditModel.getOfferTime());
+        instanceConfigNew.setDataChangeCreatedTime(auditModel.getOfferTime());
 
         try {
-            InstanceConfig instanceConfigTmp = instanceService.findInstanceConfig(instanceConfig.getInstanceId(), instanceConfig.getConfigAppId(), instanceConfig.getConfigNamespaceName());
+            //InstanceConfig instanceConfigTmp = instanceService.findInstanceConfig(instanceConfig.getInstanceId(), instanceConfig.getConfigAppId(), instanceConfig.getConfigNamespaceName());
 
-            if(null == instanceConfigTmp){
-                instanceService.createInstanceConfig(instanceConfig);
-            }
+            instanceService.createInstanceConfig(instanceConfigNew);
 
         } catch (Exception ex) {
             //concurrent insertion, safe to ignore
@@ -172,11 +182,17 @@ public class InstanceConfigAuditUtil implements InitializingBean {
         auditExecutorService.submit(() -> {
             while (!auditStopped.get() && !Thread.currentThread().isInterrupted()) {
                 try {
-                    InstanceConfigAuditModel model = audits.poll();
-                    if (model == null) {
-                        TimeUnit.SECONDS.sleep(1);
+                    String modelStr = jimClient.rPop(apolloServerIp);
+                    if (StringUtils.isBlank(modelStr)) {
+                        TimeUnit.MILLISECONDS.sleep(100);
                         continue;
                     }
+                    InstanceConfigAuditModel model = JSONObject.parseObject(modelStr, InstanceConfigAuditModel.class);
+//                    InstanceConfigAuditModel model = audits.poll();
+//                    if (model == null) {
+//                        TimeUnit.SECONDS.sleep(1);
+//                        continue;
+//                    }
 
                     doAudit(model);
                 } catch (Throwable ex) {
@@ -210,13 +226,13 @@ public class InstanceConfigAuditUtil implements InitializingBean {
         private Date offerTime;
 
         public InstanceConfigAuditModel(String appId, String clusterName, String dataCenter, String
-                clientIp, String configAppId, String configClusterName, String configNamespace, String
+                ip, String configAppId, String configClusterName, String configNamespace, String
                                                 releaseKey) {
             this.offerTime = new Date();
             this.appId = appId;
             this.clusterName = clusterName;
             this.dataCenter = Strings.isNullOrEmpty(dataCenter) ? "" : dataCenter;
-            this.ip = clientIp;
+            this.ip = ip;
             this.configAppId = configAppId;
             this.configClusterName = configClusterName;
             this.configNamespace = configNamespace;
