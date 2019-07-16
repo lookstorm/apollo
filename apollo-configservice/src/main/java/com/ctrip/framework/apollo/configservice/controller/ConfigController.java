@@ -136,6 +136,7 @@ public class ConfigController {
 
                 if (releases.isEmpty()) {
 
+                    //防止缓存击穿
                     jimClient.setEx(cacheKey, "NULL", 48, TimeUnit.HOURS);
 
                     response.sendError(HttpServletResponse.SC_NOT_FOUND,
