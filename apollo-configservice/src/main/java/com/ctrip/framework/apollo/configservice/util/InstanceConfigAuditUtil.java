@@ -58,8 +58,7 @@ public class InstanceConfigAuditUtil implements InitializingBean {
 
     public InstanceConfigAuditUtil(final InstanceService instanceService) {
         this.instanceService = instanceService;
-        auditExecutorService = Executors.newFixedThreadPool(5,
-                ApolloThreadFactory.create("InstanceConfigAuditUtil", true));
+        auditExecutorService = Executors.newSingleThreadExecutor(ApolloThreadFactory.create("InstanceConfigAuditUtil", true));
         auditStopped = new AtomicBoolean(false);
         instanceCache = CacheBuilder.newBuilder().expireAfterAccess(1, TimeUnit.HOURS)
                 .maximumSize(INSTANCE_CACHE_MAX_SIZE).build();
