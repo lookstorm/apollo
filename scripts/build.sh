@@ -33,6 +33,6 @@ echo "==== building config-service and admin-service finished ===="
 
 echo "==== starting to build portal ===="
 
-mvn clean package -DskipTests -pl apollo-portal -am -Dapollo_profile=github,jd -Dspring_datasource_url=$apollo_portal_db_url -Dspring_datasource_username=$apollo_portal_db_username -Dspring_datasource_password=$apollo_portal_db_password $META_SERVERS_OPTS
+mvn clean package -DskipTests -pl apollo-portal -am -Derp_domain_name=jdapollo.jd.com -Dlogin_url=http://ssa.jd.com/sso/login -Dapp_home_url=http://jdapollo.jd.com/ -Dapollo_profile=github,jd -Dspring_datasource_url=$apollo_portal_db_url -Dspring_datasource_username=$apollo_portal_db_username -Dspring_datasource_password=$apollo_portal_db_password $META_SERVERS_OPTS
 
 echo "==== building portal finished ===="

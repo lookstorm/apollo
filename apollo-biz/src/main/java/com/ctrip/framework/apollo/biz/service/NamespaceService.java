@@ -216,6 +216,8 @@ public class NamespaceService {
     }
 
     public NamespaceWrapperDTO findNamespacesLikeV1(String appId, String clusterName, String namespaceName, String keyName, int page, int size) {
+        namespaceName = org.apache.commons.lang.StringUtils.trim(namespaceName);
+
         logger.info("==33.1==findNamespacesLike===namespaceName====: {}, {}, {}, {}", namespaceName, keyName, page, size);
 
         NamespaceWrapperDTO result = new NamespaceWrapperDTO();
@@ -226,11 +228,40 @@ public class NamespaceService {
         if (StringUtils.isBlank(namespaceName) && StringUtils.isBlank(keyName)) {
             namespacePage = namespaceRepository.findByAppIdAndClusterNameOrderByIdAscLike(appId, clusterName, pageable);
         } else if (!StringUtils.isBlank(namespaceName) && StringUtils.isEmpty(keyName)) {
-            namespacePage = namespaceRepository.findByAppIdAndClusterNameOrderByIdAscLikeWithNamespace(appId, clusterName, namespaceName, pageable);
+            String[] namespaceNameArr = namespaceName.split(" ");
+            if (namespaceNameArr.length == 1) {
+                namespacePage = namespaceRepository.findByAppIdAndClusterNameOrderByIdAscLikeWithNamespace(appId, clusterName, namespaceNameArr[0], pageable);
+            } else if (namespaceNameArr.length == 2) {
+                namespacePage = namespaceRepository.findByAppIdAndClusterNameOrderByIdAscLikeWithNamespace42(appId, clusterName, namespaceNameArr[0], namespaceNameArr[1], pageable);
+            } else if (namespaceNameArr.length == 3) {
+                namespacePage = namespaceRepository.findByAppIdAndClusterNameOrderByIdAscLikeWithNamespace43(appId, clusterName, namespaceNameArr[0], namespaceNameArr[1], namespaceNameArr[2], pageable);
+            } else if (namespaceNameArr.length == 4) {
+                namespacePage = namespaceRepository.findByAppIdAndClusterNameOrderByIdAscLikeWithNamespace44(appId, clusterName, namespaceNameArr[0], namespaceNameArr[1], namespaceNameArr[2], namespaceNameArr[3], pageable);
+            } else if (namespaceNameArr.length == 5) {
+                namespacePage = namespaceRepository.findByAppIdAndClusterNameOrderByIdAscLikeWithNamespace45(appId, clusterName, namespaceNameArr[0], namespaceNameArr[1], namespaceNameArr[2], namespaceNameArr[3], namespaceNameArr[4], pageable);
+            } else if (namespaceNameArr.length == 6) {
+                namespacePage = namespaceRepository.findByAppIdAndClusterNameOrderByIdAscLikeWithNamespace46(appId, clusterName, namespaceNameArr[0], namespaceNameArr[1], namespaceNameArr[2], namespaceNameArr[3], namespaceNameArr[4], namespaceNameArr[5], pageable);
+            }
+
         } else if (StringUtils.isBlank(namespaceName) && !StringUtils.isBlank(keyName)) {
             namespacePage = namespaceRepository.findByAppIdAndClusterNameOrderByIdAscLikeWithKey(appId, clusterName, keyName, pageable);
         } else if (!StringUtils.isBlank(namespaceName) && !StringUtils.isBlank(keyName)) {
-            namespacePage = namespaceRepository.findByAppIdAndClusterNameOrderByIdAscLikeWithAll(appId, clusterName, namespaceName, keyName, pageable);
+
+            String[] namespaceNameArr = namespaceName.split(" ");
+            if (namespaceNameArr.length == 1) {
+                namespacePage = namespaceRepository.findByAppIdAndClusterNameOrderByIdAscLikeWithAll(appId, clusterName, namespaceNameArr[0], keyName, pageable);
+            } else if (namespaceNameArr.length == 2) {
+                namespacePage = namespaceRepository.findByAppIdAndClusterNameOrderByIdAscLikeWithAll42(appId, clusterName, namespaceNameArr[0], namespaceNameArr[1], keyName, pageable);
+            } else if (namespaceNameArr.length == 3) {
+                namespacePage = namespaceRepository.findByAppIdAndClusterNameOrderByIdAscLikeWithAll43(appId, clusterName, namespaceNameArr[0], namespaceNameArr[1], namespaceNameArr[2], keyName, pageable);
+            } else if (namespaceNameArr.length == 4) {
+                namespacePage = namespaceRepository.findByAppIdAndClusterNameOrderByIdAscLikeWithAll44(appId, clusterName, namespaceNameArr[0], namespaceNameArr[1], namespaceNameArr[2], namespaceNameArr[3], keyName, pageable);
+            } else if (namespaceNameArr.length == 5) {
+                namespacePage = namespaceRepository.findByAppIdAndClusterNameOrderByIdAscLikeWithAll45(appId, clusterName, namespaceNameArr[0], namespaceNameArr[1], namespaceNameArr[2], namespaceNameArr[3], namespaceNameArr[4], keyName, pageable);
+            } else if (namespaceNameArr.length == 6) {
+                namespacePage = namespaceRepository.findByAppIdAndClusterNameOrderByIdAscLikeWithAll46(appId, clusterName, namespaceNameArr[0], namespaceNameArr[1], namespaceNameArr[2], namespaceNameArr[3], namespaceNameArr[4], namespaceNameArr[5], keyName, pageable);
+            }
+
         }
 
         namespaces = namespacePage.getContent();

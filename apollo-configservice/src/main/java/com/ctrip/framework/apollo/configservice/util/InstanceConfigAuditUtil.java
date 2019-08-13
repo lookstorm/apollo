@@ -40,7 +40,7 @@ public class InstanceConfigAuditUtil implements InitializingBean {
     private static final int INSTANCE_CONFIG_AUDIT_MAX_SIZE = 100000;
     private static final int INSTANCE_CACHE_MAX_SIZE = 50000;
     private static final int INSTANCE_CONFIG_CACHE_MAX_SIZE = 50000;
-    private static final long OFFER_TIME_LAST_MODIFIED_TIME_THRESHOLD_IN_MILLI = TimeUnit.HOURS.toMillis(20);
+    private static final long OFFER_TIME_LAST_MODIFIED_TIME_THRESHOLD_IN_MILLI = TimeUnit.HOURS.toMillis(10);
     private static final Joiner STRING_JOINER = Joiner.on(ConfigConsts.CLUSTER_NAMESPACE_SEPARATOR);
     private final ExecutorService auditExecutorService;
     private final AtomicBoolean auditStopped;
