@@ -10,6 +10,16 @@ appService.service("NamespaceService", ['$resource', '$q', function ($resource, 
             url: '/apps/:appId/namespaces',
             isArray: false
         },
+        batchWriteAndUpdateNamespaces: {
+            method: 'POST',
+            url: '/apps/:appId/batchWriteAndUpdateNamespaces',
+            isArray: false
+        },
+        batchWriteAndUpdateNamespaces4Ray: {
+            method: 'POST',
+            url: '/apps/:appId/batchWriteAndUpdateNamespaces4Ray',
+            isArray: false
+        },
         createAppNamespace: {
             method: 'POST',
             url: '/apps/:appId/appnamespaces?appendNamespacePrefix=:appendNamespacePrefix',
@@ -53,6 +63,30 @@ appService.service("NamespaceService", ['$resource', '$q', function ($resource, 
         namespace_source.createNamespace({
                                              appId: appId
                                          }, namespaceCreationModel, function (result) {
+            d.resolve(result);
+        }, function (result) {
+            d.reject(result);
+        });
+        return d.promise;
+    }
+
+    function batchWriteAndUpdateNamespaces(appId, namespaceBatchModel) {
+        var d = $q.defer();
+        namespace_source.batchWriteAndUpdateNamespaces({
+            appId: appId
+        }, namespaceBatchModel, function (result) {
+            d.resolve(result);
+        }, function (result) {
+            d.reject(result);
+        });
+        return d.promise;
+    }
+
+    function batchWriteAndUpdateNamespaces4Ray(appId, namespaceBatchModel) {
+        var d = $q.defer();
+        namespace_source.batchWriteAndUpdateNamespaces4Ray({
+            appId: appId
+        }, namespaceBatchModel, function (result) {
             d.resolve(result);
         }, function (result) {
             d.reject(result);
@@ -161,7 +195,9 @@ appService.service("NamespaceService", ['$resource', '$q', function ($resource, 
         deleteNamespace: deleteNamespace,
         getPublicAppNamespaceAllNamespaces: getPublicAppNamespaceAllNamespaces,
         loadAppNamespace: loadAppNamespace,
-        deleteAppNamespace: deleteAppNamespace
+        deleteAppNamespace: deleteAppNamespace,
+        batchWriteAndUpdateNamespaces: batchWriteAndUpdateNamespaces,
+        batchWriteAndUpdateNamespaces4Ray: batchWriteAndUpdateNamespaces4Ray
     }
 
 }]);

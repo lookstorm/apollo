@@ -3,14 +3,17 @@
        xmlns:mvc="http://www.springframework.org/schema/mvc"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:jsf="http://jsf.jd.com/schema/jsf"
+       xmlns:context="http://www.springframework.org/schema/context"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
        http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
        http://www.springframework.org/schema/mvc
        http://www.springframework.org/schema/mvc/spring-mvc-3.0.xsd
        http://jsf.jd.com/schema/jsf
-       http://jsf.jd.com/schema/jsf/jsf.xsd">
+       http://jsf.jd.com/schema/jsf/jsf.xsd
+       http://www.springframework.org/schema/context
+       http://www.springframework.org/schema/context/spring-context.xsd">
 
-
+    <context:property-placeholder location="classpath:apollo-env.properties" />
     <jsf:registry id="jsfRegistry" protocol="jsfRegistry" index="i.jsf.jd.com"/>
     <!-- 单点登录JSF服务接口 -->
     <jsf:consumer id="ssoService"
@@ -33,10 +36,10 @@
             <!-- 单点登录springmvc 拦截器bean -->
             <bean id="springSSOInterceptor"
                   class="com.jd.common.springmvc.interceptor.SpringSSOInterceptor">
-                <property name="appDomainName" value="jdapollo.jd.com" />
-                <property name="appHomeUrl" value="http://jdapollo.jd.com/" />
-                <property name="loginUrl" value="http://ssa.jd.com/sso/login" />
-                <property name="ssoDomainName" value="jdapollo.jd.com" />
+                <property name="appDomainName" value="${erp.domain.name}" />
+                <property name="appHomeUrl" value="${app.home.url}" />
+                <property name="loginUrl" value="${login.url}" />
+                <property name="ssoDomainName" value="${erp.domain.name}" />
                 <property name="excludePath" value="/static,/openapi,/vendor,/styles,/scripts,/views,/img" />
                 <property name="ssoService" ref="ssoService" />
             </bean>

@@ -24,7 +24,6 @@ public class JDUserInfoHolder implements UserInfoHolder {
         try {
 
             LoginContext loginContext = LoginContext.getLoginContext();
-            logger.info("loginContext==={}", JSONObject.toJSONString(loginContext));
 
             UserInfo userInfo = new UserInfo();
 

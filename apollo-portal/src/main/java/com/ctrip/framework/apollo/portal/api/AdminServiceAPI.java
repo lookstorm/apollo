@@ -112,6 +112,13 @@ public class AdminServiceAPI {
                             namespace.getAppId(), namespace.getClusterName());
         }
 
+        public List<NamespaceDTO> findWaitforRelease(String appId, Env env, String clusterName) {
+            NamespaceDTO[] namespaceDTOs = restTemplate.get(env, "/apps/{appId}/clusters/{clusterName}/releasenamespaces",
+                    NamespaceDTO[].class, appId,
+                    clusterName);
+            return Arrays.asList(namespaceDTOs);
+        }
+
         public AppNamespaceDTO createAppNamespace(Env env, AppNamespaceDTO appNamespace) {
             return restTemplate
                     .post(env, "apps/{appId}/appnamespaces", appNamespace, AppNamespaceDTO.class, appNamespace.getAppId());

@@ -25,6 +25,16 @@ appService.service("ConfigService", ['$resource', '$q', function ($resource, $q)
             isArray: false,
             url: '/apps/:appId/envs/:env/clusters/:clusterName/namespaceslikeV1?namespaceName=:namespaceName&keyName=:keyName&page=:page&size=:size'
         },
+        batch_release_namespaces: {
+            method: 'GET',
+            isArray: false,
+            url: '/apps/:appId/envs/:env/clusters/:clusterName/batchReleaseNamespaces'
+        },
+        batch_release_namespaces_ray: {
+            method: 'GET',
+            isArray: false,
+            url: '/apps/:appId/envs/:env/clusters/:clusterName/batchReleaseNamespacesRay'
+        },
         find_items: {
             method: 'GET',
             isArray: true,
@@ -98,6 +108,38 @@ appService.service("ConfigService", ['$resource', '$q', function ($resource, $q)
                                                   env: env,
                                                   clusterName: clusterName
                                               }, function (result) {
+                d.resolve(result);
+            }, function (result) {
+                d.reject(result);
+            });
+            return d.promise;
+        },
+        batch_release_namespaces: function (appId, env, clusterName) {
+            console.log("_____"+appId)
+            console.log("_____"+env)
+            console.log("_____"+clusterName)
+            var d = $q.defer();
+            config_source.batch_release_namespaces({
+                appId: appId,
+                env: env,
+                clusterName: clusterName
+            }, function (result) {
+                d.resolve(result);
+            }, function (result) {
+                d.reject(result);
+            });
+            return d.promise;
+        },
+        batch_release_namespaces_ray: function (appId, env, clusterName) {
+            console.log("_____"+appId)
+            console.log("_____"+env)
+            console.log("_____"+clusterName)
+            var d = $q.defer();
+            config_source.batch_release_namespaces_ray({
+                appId: appId,
+                env: env,
+                clusterName: clusterName
+            }, function (result) {
                 d.resolve(result);
             }, function (result) {
                 d.reject(result);

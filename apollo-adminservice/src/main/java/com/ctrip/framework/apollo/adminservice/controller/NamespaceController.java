@@ -64,6 +64,13 @@ public class NamespaceController {
     return BeanUtils.batchTransform(NamespaceDTO.class, groups);
   }
 
+  @GetMapping("/apps/{appId}/clusters/{clusterName}/releasenamespaces")
+  public List<NamespaceDTO> findWaitforRelease(@PathVariable("appId") String appId,
+                                 @PathVariable("clusterName") String clusterName) {
+    List<Namespace> groups = namespaceService.findWaitforRelease(appId, clusterName);
+    return BeanUtils.batchTransform(NamespaceDTO.class, groups);
+  }
+
   @GetMapping("/apps/{appId}/clusters/{clusterName}/namespaceslike")
   public List<NamespaceDTO> findLike(@PathVariable("appId") String appId,
                                  @PathVariable("clusterName") String clusterName, @RequestParam String namespaceName, @RequestParam String keyName, @RequestParam int page, @RequestParam int size) {

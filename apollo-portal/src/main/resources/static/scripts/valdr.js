@@ -103,4 +103,16 @@ application_module.config(function (valdrProvider) {
                                  })
 });
 
+items_module.config(function (valdrProvider) {
+    valdrProvider.addConstraints({
+        'Items': {
+            'NamespaceArea': {
+                'required': {
+                    'message': 'Namespace集合不能为空'
+                }
+            }
+        }
+    })
+});
+
 
