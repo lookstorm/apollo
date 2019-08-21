@@ -31,6 +31,62 @@ function controller($rootScope, $scope, toastr, AppUtil, $location, EventManager
         initPage();
     }
 
+    $scope.selectNS4Check = function () {
+        var urlParams = AppUtil.parseParams($location.$$url);
+        var appId = urlParams.appid;
+        var ss1 = document.getElementById("ss1").value;
+        var ss2 = document.getElementById("ss2").value;
+
+        if(ss1==null || ss1==undefined){
+            ss1 = ""
+        }
+        if(ss2==null || ss2==undefined){
+            ss2 = ""
+        }
+
+        console.log("....selectNS4Check..searchNameSpace..."+ss1)
+        console.log("....selectNS4Check..searchKeyValue..."+ss2)
+        console.log("....selectNS4Check...appId.."+appId)
+        console.log("....selectNS4Check...$rootScope.pageContext.env.."+$rootScope.pageContext.env)
+        console.log("....selectNS4Check...$rootScope.pageContext.clusterName.."+$rootScope.pageContext.clusterName)
+
+        ConfigService.load_all_namespaces_like_v2(appId,
+            $rootScope.pageContext.env,
+            $rootScope.pageContext.clusterName,
+            ss2,
+            ss1,
+            0,
+            10).then(
+            function (result) {
+                copyresult = "";
+                namespaceBOList = result.namespaceBOList;
+                for (var i = 0; i < namespaceBOList.length; i++) {
+                    namespaceBO = namespaceBOList[i];
+                    baseInfo = namespaceBO.baseInfo;
+
+                    copyresult += baseInfo.namespaceName+"\n"
+                }
+
+                copyresult=copyresult.substring(0,copyresult.length-1);
+                var textarea = document.createElement('textarea');
+                text=document.createTextNode(copyresult);
+                textarea.appendChild(text);
+                document.body.appendChild(textarea);
+                textarea.select();
+
+                if (document.execCommand('copy')) {
+                    //document.execCommand('copy');
+                    console.log('复制成功');
+                }
+
+                document.body.removeChild(textarea);
+                console.log(copyresult);
+            }, function (result) {
+                toastr.error(AppUtil.errorMsg(result), "加载配置信息出错");
+            });
+
+    };
+
     function initPage() {
         $scope.currentPage = 1;
         $scope.isShowPage = false;
