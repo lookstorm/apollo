@@ -9,7 +9,7 @@
     <link rel="stylesheet" type="text/css" href="vendor/select2/select2.min.css">
     <link rel="stylesheet" type="text/css" media='all' href="vendor/angular/loading-bar.min.css">
     <link rel="stylesheet" type="text/css" href="styles/common-style.css">
-    <title>批量修改Items</title>
+    <title>批量修改</title>
 </head>
 
 <body>
@@ -23,7 +23,7 @@
                 <header class="panel-heading">
                     <div class="row">
                         <div class="col-md-6">
-                            <h4>批量修改Items</h4>
+                            <h4>批量修改</h4>
                         </div>
                         <div class="col-md-6 text-right">
                             <a type="button" class="btn btn-info" href="/config.html?#/appid={{appId}}">返回到项目首页
@@ -39,8 +39,8 @@
                     <div class="alert alert-info no-radius" role="alert">
                         <strong>Tips:</strong>
                         <ul>
-                            <li>批量创建、修改Namespace</li>
                             <li>批量创建、修改、删除Namespace键值对</li>
+                            <li>建议添加备注, 以便更详细的审计</li>
                         </ul>
                     </div>
                     <form class="form-horizontal" name="itermsForm" valdr-type="Items" ng-show="step == 1"
@@ -71,21 +71,32 @@
                                 <small>(键值以'='分隔，每行一个键值对)</small>
                             </div>
                         </div>
+                        <div class="form-group" valdr-form-group>
+                            <label class="col-sm-2 control-label">
+                                <apollorequiredfield></apollorequiredfield>
+                                执行操作</label>
+                            <div class="col-sm-6">
+                                <select id="opType" class="form-control" name="opType" ng-model="opType">
+                                    <option></option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group" valdr-form-group>
+                            <label class="col-sm-2 control-label">
+                                备注</label>
+                            <div class="col-sm-6">
+                                <textarea style="height: 50px;width: 700px" class="form-control" name="itemComment" ng-model="itemComment"></textarea>
+                                <small>(操作说明，建议填写)</small>
+                            </div>
+                        </div>
                         <div class="form-group">
                             <label class="col-sm-2 control-label">
                                 <apollorequiredfield></apollorequiredfield>
                                 选择环境</label>
-                            <div class="col-sm-5">
-                                <table class="table table-hover" style="width: 100px">
-                                    <tbody>
-                                    <tr style="cursor: pointer" ng-repeat="env in envs"
-                                        ng-click="toggleEnvCheckedStatus(env)">
-                                        <td width="10%"><input type="checkbox" ng-checked="env.checked"
-                                                               ng-click="switchChecked(env, $event)"></td>
-                                        <td width="30%" ng-bind="env.name"></td>
-                                    </tr>
-                                    </tbody>
-                                </table>
+                            <div class="col-sm-6" valdr-form-group>
+                                <apolloclusterselector apollo-app-id="appId" apollo-default-all-checked="true"
+                                                       apollo-select="collectSelectedClusters"></apolloclusterselector>
 
                             </div>
                         </div>
@@ -100,7 +111,7 @@
                     </form>
                     <div class="row text-center" ng-show="step == 2">
                         <img src="img/sync-succ.png" style="height: 100px; width: 100px">
-                        <h3>创建成功!</h3>
+                        <h3>操作成功!</h3>
                     </div>
                 </div>
             </div>

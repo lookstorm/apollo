@@ -81,6 +81,7 @@ function controller($rootScope, $scope, toastr, AppUtil, $location, EventManager
 
                 document.body.removeChild(textarea);
                 console.log(copyresult);
+                toastr.success("复制成功");
             }, function (result) {
                 toastr.error(AppUtil.errorMsg(result), "加载配置信息出错");
             });

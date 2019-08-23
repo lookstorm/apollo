@@ -8,9 +8,9 @@ items_module.controller('ItemsController',
                                $scope.appId = params.appid;
 
                                $scope.step = 1;
-                               
+
                                $scope.submitBtnDisabled = false;
-                               
+
                                EnvService.find_all_envs().then(function (result) {
                                    $scope.envs = [];
                                    result.forEach(function (env) {
@@ -24,6 +24,13 @@ items_module.controller('ItemsController',
 
                                $scope.clusterName = '';
 
+                               var publicOpType = [{"id": "aam", "text": "修改+新增"}, {"id": "del", "text": "删除"}];
+                               $('#opType').select2({
+                                   placeholder: '请选择操作类型',
+                                   width: '100%',
+                                   data: publicOpType
+                               }).val("aam").trigger('change');
+
                                $scope.switchChecked = function (env,  $event) {
                                    env.checked = !env.checked;
                                    $event.stopPropagation();
@@ -33,32 +40,55 @@ items_module.controller('ItemsController',
                                    env.checked = !env.checked;
                                };
 
+                               var selectedClusters = [];
+                               $scope.collectSelectedClusters = function (data) {
+                                   selectedClusters = data;
+                               };
 
                                $scope.create = function () {
                                    console.log('-------------------')
-                                   var noEnvChecked = true;
-                                   $scope.envs.forEach(function (env) {
-                                       if (env.checked) {
-                                           noEnvChecked = false;
-                                           $scope.submitBtnDisabled = true;
-                                           // ClusterService.create_cluster($scope.appId, env.name,
-                                           //                               {
-                                           //                                   name: $scope.clusterName,
-                                           //                                   appId: $scope.appId
-                                           //                               }).then(function (result) {
-                                           //     toastr.success(env.name, "集群创建成功");
-                                           //     $scope.step = 2;
-                                           //     $scope.submitBtnDisabled = false;
-                                           // }, function (result) {
-                                           //     toastr.error(AppUtil.errorMsg(result), "集群创建失败");
-                                           //     $scope.submitBtnDisabled = false;
-                                           // })
-                                       }
+
+                                   if (selectedClusters.length <= 0){
+                                       toastr.warning("请选择环境及集群");
+                                       return
+                                   }
+
+                                   $scope.submitBtnDisabled = true;
+                                   console.log($scope.NamespaceArea)
+                                   console.log($scope.itemArea)
+                                   console.log($scope.appId)
+                                   console.log(selectedClusters)
+                                   console.log($scope.opType)
+
+                                   var namespaceBatchModel = [];
+                                   selectedClusters.forEach(function (cluster) {
+                                       namespaceBatchModel.push({
+                                           env: cluster.env,
+                                           namespace: {
+                                               appId: $scope.appId,
+                                               NamespaceArea: $scope.NamespaceArea,
+                                               itemArea: $scope.itemArea,
+                                               clusterName: cluster.clusterName,
+                                               itemComment: $scope.itemComment,
+                                               opType: $("#opType").val()
+                                           }
+                                       });
                                    });
 
-                                   if (noEnvChecked){
-                                       toastr.warning("请选择环境");
-                                   }
+                                   NamespaceService.batchWriteAndUpdateNamespaces($scope.appId, namespaceBatchModel)
+                                       .then(function (result) {
+                                           toastr.success("操作成功");
+                                           $scope.step = 2;
+                                           // setInterval(function () {
+                                           //     $scope.submitBtnDisabled = false;
+                                           //     $window.location.href =
+                                           //         '/namespace/role.html?#appid=' + $scope.appId
+                                           //         + "&namespaceName=" + $scope.namespaceName;
+                                           // }, 1000);
+                                       }, function (result) {
+                                           $scope.submitBtnDisabled = false;
+                                           toastr.error(AppUtil.errorMsg(result));
+                                       });
 
                                };
 
