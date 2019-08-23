@@ -195,6 +195,14 @@ public class NamespaceService {
         return namespaces;
     }
 
+    public List<Namespace> findWaitforRelease(String appId, String clusterName) {
+        List<Namespace> namespaces = namespaceRepository.findWaitforRelease(appId, clusterName);
+        if (namespaces == null) {
+            return Collections.emptyList();
+        }
+        return namespaces;
+    }
+
     public List<Namespace> findNamespacesLike(String appId, String clusterName, String namespaceName, String keyName, int page, int size) {
         logger.info("==33==findNamespacesLike===namespaceName====: {}, {}, {}, {}", namespaceName, keyName, page, size);
 

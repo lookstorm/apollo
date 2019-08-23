@@ -214,10 +214,21 @@
         </div>
 
         <header class="panel-heading" style="height:50px;background-color:white">
-            <div class="row" style="float:right;margin-right:10px"><button type="button" class="btn btn-success btn-sm" data-tooltip="tooltip" data-placement="bottom" title="" ng-disabled="namespace.isTextEditing" ng-click="selectNS4Check()" data-original-title="搜索全选">
+            <div class="row" style="float:right;margin-right:10px;margin-left: 5px">
+                <a type="button" class="btn btn-default btn-sm" data-tooltip="tooltip" data-placement="bottom" title="" href="javascript:void(0);" ng-click="selectNS4Check()" data-original-title="搜索全选">
+                    <img src="img/release-history.png">
+                    一键复制Namespace
+                </a>
+<!--                <button type="button" class="btn btn-success btn-sm" data-tooltip="tooltip" data-placement="bottom" title="" ng-disabled="namespace.isTextEditing" ng-click="selectNS4Check()" data-original-title="搜索全选">-->
+<!--                <img src="img/release.png">-->
+<!--                一键复制Namespace-->
+<!--            </button>-->
+            </div>
+            <div class="row" style="float:right;margin-right:10px;margin-left: 5px"><button type="button" class="btn btn-success btn-sm" data-tooltip="tooltip" data-placement="bottom" title="" ng-disabled="namespace.isTextEditing" ng-click="batchRelease()" data-original-title="一键发布">
                 <img src="img/release.png">
-                一键复制Namespace
-            </button></div></header>
+                一键发布
+            </button></div>
+        </header>
         <header class="row namespace-attribute-panel ng-scope" style="weight:100%; height:20px"></header>
 
         <apollonspanel ng-repeat="namespace in namespaces"

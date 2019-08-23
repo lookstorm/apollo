@@ -1,10 +1,7 @@
 package com.ctrip.framework.apollo.portal.controller;
 
 import com.alibaba.fastjson.JSONObject;
-import com.ctrip.framework.apollo.common.dto.AppNamespaceDTO;
-import com.ctrip.framework.apollo.common.dto.ItemDTO;
-import com.ctrip.framework.apollo.common.dto.NamespaceBatchDTO;
-import com.ctrip.framework.apollo.common.dto.NamespaceDTO;
+import com.ctrip.framework.apollo.common.dto.*;
 import com.ctrip.framework.apollo.common.entity.AppNamespace;
 import com.ctrip.framework.apollo.common.exception.BadRequestException;
 import com.ctrip.framework.apollo.common.http.MultiResponseEntity;
@@ -21,13 +18,12 @@ import com.ctrip.framework.apollo.portal.entity.bo.NamespaceBO;
 import com.ctrip.framework.apollo.portal.entity.bo.NamespaceWrapperBO;
 import com.ctrip.framework.apollo.portal.entity.model.NamespaceBatchModel;
 import com.ctrip.framework.apollo.portal.entity.model.NamespaceCreationModel;
+import com.ctrip.framework.apollo.portal.entity.model.NamespaceReleaseModel;
 import com.ctrip.framework.apollo.portal.enums.OpType;
 import com.ctrip.framework.apollo.portal.listener.AppNamespaceCreationEvent;
 import com.ctrip.framework.apollo.portal.listener.AppNamespaceDeletionEvent;
-import com.ctrip.framework.apollo.portal.service.AppNamespaceService;
-import com.ctrip.framework.apollo.portal.service.ItemService;
-import com.ctrip.framework.apollo.portal.service.NamespaceService;
-import com.ctrip.framework.apollo.portal.service.RoleInitializationService;
+import com.ctrip.framework.apollo.portal.listener.ConfigPublishEvent;
+import com.ctrip.framework.apollo.portal.service.*;
 import com.ctrip.framework.apollo.portal.spi.UserInfoHolder;
 import com.ctrip.framework.apollo.tracer.Tracer;
 import com.google.common.collect.ArrayListMultimap;
@@ -67,6 +63,7 @@ public class NamespaceController {
     private final PermissionValidator permissionValidator;
     private final AdminServiceAPI.NamespaceAPI namespaceAPI;
     private final ItemService itemService;
+    private final ReleaseService releaseService;
 
     public NamespaceController(
             final ApplicationEventPublisher publisher,
@@ -77,7 +74,8 @@ public class NamespaceController {
             final PortalConfig portalConfig,
             final PermissionValidator permissionValidator,
             final AdminServiceAPI.NamespaceAPI namespaceAPI,
-            ItemService itemService) {
+            ItemService itemService,
+            final ReleaseService releaseService) {
         this.publisher = publisher;
         this.userInfoHolder = userInfoHolder;
         this.namespaceService = namespaceService;
@@ -87,6 +85,7 @@ public class NamespaceController {
         this.permissionValidator = permissionValidator;
         this.namespaceAPI = namespaceAPI;
         this.itemService = itemService;
+        this.releaseService = releaseService;
     }
 
 
@@ -232,11 +231,17 @@ public class NamespaceController {
             String[] namespaceArray = namespaceArea.split("\n");
             String[] itemArray = itemArea.split("\n");
             for (String namespaceObj : namespaceArray) {
+
+                if (!permissionValidator.hasModifyNamespacePermission(appId, namespaceObj, model.getEnv())) {
+                    errorResult.put("无Namespace修改权限", String.format("%s, %s, %s", appId, namespaceObj, model.getEnv()));
+                    continue;
+                }
+
                 for (String itemObj : itemArray) {
                     String[] itemKV = itemObj.split("=");
 
                     if (OpType.DEL.getName().equals(opType)) {
-                        try{
+                        try {
                             ItemDTO toDeleteItem = itemService.loadItem(Env.fromString(model.getEnv()), appId, namespaceBatchDTO.getClusterName(), namespaceObj, itemKV[0]);
                             if (toDeleteItem == null) {
                                 //throw new BadRequestException("item not exists");
@@ -244,7 +249,7 @@ public class NamespaceController {
                             }
 
                             itemService.deleteItem(Env.fromString(model.getEnv()), toDeleteItem.getId(), userInfoHolder.getUser().getUserId());
-                        }catch (Exception e){
+                        } catch (Exception e) {
                             logger.error("batchWriteAndUpdateNamespaces del error", e);
                         }
 
@@ -291,7 +296,7 @@ public class NamespaceController {
                                 errorResult.put(namespaceObj, String.format("%s: %s", item.getKey(), item.getValue()));
                             }
                         }
-                    }else{
+                    } else {
                         throw new BadRequestException("请选择正确的操作类型");
                     }
 
@@ -302,6 +307,56 @@ public class NamespaceController {
 
         if (errorResult.size() > 0) {
             throw new BadRequestException("以下数据入库失败，请检查:\r\n" + JSONObject.toJSONString(errorResult));
+        }
+
+        return ResponseEntity.ok().build();
+    }
+
+    @PreAuthorize(value = "@permissionValidator.isSuperAdmin()")
+    @GetMapping("/apps/{appId}/envs/{env}/clusters/{clusterName}/batchReleaseNamespaces")
+    public ResponseEntity<Void> batchReleaseNamespaces(@PathVariable String appId,
+                                                       @PathVariable String clusterName, @PathVariable String env) {
+
+        List<NamespaceDTO> namespaceDTOList = namespaceService.findWaitforRelease(appId, Env.fromString(env), clusterName);
+
+        Set<String> errorResult = Sets.newHashSet();
+
+        if (org.apache.commons.collections4.CollectionUtils.isNotEmpty(namespaceDTOList)) {
+            for (NamespaceDTO namespaceDTO : namespaceDTOList) {
+                try {
+                    NamespaceReleaseModel model = new NamespaceReleaseModel();
+
+                    model.setAppId(appId);
+                    model.setEnv(env);
+                    model.setClusterName(clusterName);
+                    model.setNamespaceName(namespaceDTO.getNamespaceName());
+
+//                    if (model.isEmergencyPublish() && !portalConfig.isEmergencyPublishAllowed(Env.valueOf(env))) {
+//                        throw new BadRequestException(String.format("Env: %s is not supported emergency publish now", env));
+//                    }
+
+                    ReleaseDTO createdRelease = releaseService.publish(model);
+
+                    ConfigPublishEvent event = ConfigPublishEvent.instance();
+                    event.withAppId(appId)
+                            .withCluster(clusterName)
+                            .withNamespace(namespaceDTO.getNamespaceName())
+                            .withReleaseId(createdRelease.getId())
+                            .setNormalPublishEvent(true)
+                            .setEnv(Env.valueOf(env));
+
+                    publisher.publishEvent(event);
+                } catch (Exception e) {
+                    logger.error("batchReleaseNamespaces error: ", e);
+
+                    errorResult.add(String.format("%s, %s, %s, %s", appId, env, clusterName, namespaceDTO.getNamespaceName()));
+                }
+            }
+
+        }
+
+        if(errorResult.size() > 0){
+            throw new BadRequestException("发布失败, 可能是权限问题, 请联系后台人员:\r\n" + JSONObject.toJSONString(errorResult));
         }
 
         return ResponseEntity.ok().build();

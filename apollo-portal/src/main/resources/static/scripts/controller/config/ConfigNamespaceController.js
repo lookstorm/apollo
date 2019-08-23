@@ -31,6 +31,22 @@ function controller($rootScope, $scope, toastr, AppUtil, $location, EventManager
         initPage();
     }
 
+    $scope.batchRelease = function () {
+        console.log($rootScope.pageContext.appId)
+        console.log($rootScope.pageContext.env)
+        console.log($rootScope.pageContext.clusterName)
+        ConfigService.batch_release_namespaces($rootScope.pageContext.appId,
+            $rootScope.pageContext.env,
+            $rootScope.pageContext.clusterName).then(
+            function (result) {
+
+                toastr.success("一键发布成功");
+
+            }, function (result) {
+                toastr.error(AppUtil.errorMsg(result), "一键发布失败");
+            });
+    };
+
     $scope.selectNS4Check = function () {
         var urlParams = AppUtil.parseParams($location.$$url);
         var appId = urlParams.appid;

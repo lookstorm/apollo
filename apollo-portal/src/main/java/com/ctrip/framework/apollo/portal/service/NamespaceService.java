@@ -91,6 +91,10 @@ public class NamespaceService {
     return createdNamespace;
   }
 
+  public List<NamespaceDTO> findWaitforRelease(String appId, Env env, String clusterName) {
+    List<NamespaceDTO> createdNamespace = namespaceAPI.findWaitforRelease(appId , env, clusterName);
+    return createdNamespace;
+  }
 
   @Transactional
   public void deleteNamespace(String appId, Env env, String clusterName, String namespaceName) {
