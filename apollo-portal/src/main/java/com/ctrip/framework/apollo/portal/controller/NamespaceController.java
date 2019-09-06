@@ -9,7 +9,10 @@ import com.ctrip.framework.apollo.common.http.RichResponseEntity;
 import com.ctrip.framework.apollo.common.utils.BeanUtils;
 import com.ctrip.framework.apollo.common.utils.RequestPrecondition;
 import com.ctrip.framework.apollo.core.enums.Env;
+import com.ctrip.framework.apollo.openapi.dto.OpenGrayReleaseRuleDTO;
+import com.ctrip.framework.apollo.openapi.dto.OpenGrayReleaseRuleItemDTO;
 import com.ctrip.framework.apollo.openapi.dto.OpenItemDTO;
+import com.ctrip.framework.apollo.openapi.dto.OpenNamespaceDTO;
 import com.ctrip.framework.apollo.openapi.util.OpenApiBeanUtils;
 import com.ctrip.framework.apollo.portal.api.AdminServiceAPI;
 import com.ctrip.framework.apollo.portal.component.PermissionValidator;
@@ -17,6 +20,7 @@ import com.ctrip.framework.apollo.portal.component.config.PortalConfig;
 import com.ctrip.framework.apollo.portal.entity.bo.NamespaceBO;
 import com.ctrip.framework.apollo.portal.entity.bo.NamespaceWrapperBO;
 import com.ctrip.framework.apollo.portal.entity.model.NamespaceBatchModel;
+import com.ctrip.framework.apollo.portal.entity.model.NamespaceBatchModel4Ray;
 import com.ctrip.framework.apollo.portal.entity.model.NamespaceCreationModel;
 import com.ctrip.framework.apollo.portal.entity.model.NamespaceReleaseModel;
 import com.ctrip.framework.apollo.portal.enums.OpType;
@@ -64,6 +68,7 @@ public class NamespaceController {
     private final AdminServiceAPI.NamespaceAPI namespaceAPI;
     private final ItemService itemService;
     private final ReleaseService releaseService;
+    private final NamespaceBranchService namespaceBranchService;
 
     public NamespaceController(
             final ApplicationEventPublisher publisher,
@@ -75,7 +80,8 @@ public class NamespaceController {
             final PermissionValidator permissionValidator,
             final AdminServiceAPI.NamespaceAPI namespaceAPI,
             ItemService itemService,
-            final ReleaseService releaseService) {
+            final ReleaseService releaseService,
+            final NamespaceBranchService namespaceBranchService) {
         this.publisher = publisher;
         this.userInfoHolder = userInfoHolder;
         this.namespaceService = namespaceService;
@@ -86,6 +92,7 @@ public class NamespaceController {
         this.namespaceAPI = namespaceAPI;
         this.itemService = itemService;
         this.releaseService = releaseService;
+        this.namespaceBranchService = namespaceBranchService;
     }
 
 
@@ -205,7 +212,235 @@ public class NamespaceController {
         return ResponseEntity.ok().build();
     }
 
-    @PreAuthorize(value = "@permissionValidator.hasCreateNamespacePermission(#appId)")
+    @PreAuthorize(value = "@permissionValidator.isSuperAdmin()")
+    @PostMapping("/apps/{appId}/batchWriteAndUpdateNamespaces4Ray")
+    public ResponseEntity<Void> batchWriteAndUpdateNamespaces4Ray(@PathVariable String appId,
+                                                              @RequestBody List<NamespaceBatchModel4Ray> models) {
+        logger.info("batchWriteAndUpdateNamespaces4Ray request: {}", JSONObject.toJSONString(models));
+        Multimap<String, String> errorResult = ArrayListMultimap.create();
+
+        for (NamespaceBatchModel4Ray model : models) {
+            NamespaceBatchRayDTO namespaceBatchDTO = null;
+            String namespaceArea = null;
+            String itemArea = null;
+            String rayRules = null;
+            String opType = null;
+
+            namespaceBatchDTO = model.getNamespace();
+
+            namespaceArea = namespaceBatchDTO.getNamespaceArea();
+            itemArea = namespaceBatchDTO.getItemArea();
+            opType = namespaceBatchDTO.getOpType();
+            rayRules = namespaceBatchDTO.getRayRules();
+
+            String[] namespaceArray = namespaceArea.split("\n");
+
+
+            for (String namespaceObj : namespaceArray) {
+                if (!permissionValidator.hasModifyNamespacePermission(appId, namespaceObj, model.getEnv())) {
+                    errorResult.put("无Namespace修改权限", String.format("%s, %s, %s", appId, namespaceObj, model.getEnv()));
+                    continue;
+                }
+
+
+                if (OpType.MAIN_RELEASE.getName().equals(opType)) {
+                    try{
+                        NamespaceBO namespaceBO = namespaceBranchService.findBranch(appId, Env.valueOf(model.getEnv()), namespaceBatchDTO.getClusterName(), namespaceObj);
+
+                        logger.info("namespaceBO: {}", JSONObject.toJSONString(namespaceBO));
+
+                        if(null == namespaceBO){
+                            errorResult.put("未发现分支", String.format("%s, %s, %s, %s", appId, model.getEnv(), namespaceBatchDTO.getClusterName(), namespaceObj));
+                        }else{
+                            namespaceBranchService.merge(appId, Env.valueOf(model.getEnv()), namespaceBatchDTO.getClusterName(), namespaceObj, namespaceBO.getBaseInfo().getClusterName(),
+                                    "合并批量发布", namespaceBatchDTO.getItemComment(),
+                                    false, false, userInfoHolder.getUser().getUserId());
+                        }
+
+                    } catch (Exception e){
+                        logger.error("mergeBatchReleaseNamespaces error: ", e);
+
+                        errorResult.put("合并批量发布", String.format("%s, %s, %s, %s", appId, model.getEnv(), namespaceBatchDTO.getClusterName(), namespaceObj));
+                    }
+
+                    continue;
+
+                } else if(OpType.RAY_RELEASE.getName().equals(opType)){
+                    try {
+                        NamespaceBO namespaceBO = namespaceBranchService.findBranch(appId, Env.valueOf(model.getEnv()), namespaceBatchDTO.getClusterName(), namespaceObj);
+
+                        logger.info("namespaceBO: {}", JSONObject.toJSONString(namespaceBO));
+
+                        if(null == namespaceBO){
+                            errorResult.put("未发现分支", String.format("%s, %s, %s, %s", appId, model.getEnv(), namespaceBatchDTO.getClusterName(), namespaceObj));
+                        }else{
+                            NamespaceReleaseModel modelRay = new NamespaceReleaseModel();
+
+                            modelRay.setAppId(appId);
+                            modelRay.setEnv(model.getEnv());
+                            modelRay.setClusterName(namespaceBO.getBaseInfo().getClusterName());
+                            modelRay.setNamespaceName(namespaceObj);
+
+                            ReleaseDTO createdRelease = releaseService.publish(modelRay);
+
+                            ConfigPublishEvent event = ConfigPublishEvent.instance();
+                            event.withAppId(appId)
+                                    .withCluster(namespaceBO.getBaseInfo().getClusterName())
+                                    .withNamespace(namespaceObj)
+                                    .withReleaseId(createdRelease.getId())
+                                    .setNormalPublishEvent(true)
+                                    .setEnv(Env.valueOf(model.getEnv()));
+
+                            publisher.publishEvent(event);
+                        }
+
+
+                    } catch (Exception e) {
+                        logger.error("batchReleaseNamespaces error: ", e);
+
+                        errorResult.put("灰度批量发布", String.format("%s, %s, %s, %s", appId, model.getEnv(), namespaceBatchDTO.getClusterName(), namespaceObj));
+                    }
+
+                    continue;
+                }
+
+                //create and init ray rule
+                //create ray
+                NamespaceDTO rayNamespaceDTO = null;
+                try{
+                    logger.info("{},{},{},{},{}", appId, Env.valueOf(model.getEnv()), namespaceBatchDTO.getClusterName(), namespaceObj, userInfoHolder.getUser().getUserId());
+                    rayNamespaceDTO = namespaceBranchService.createBranch(appId, Env.valueOf(model.getEnv()), namespaceBatchDTO.getClusterName(), namespaceObj, userInfoHolder.getUser().getUserId());
+                    if(null == rayNamespaceDTO){
+                        NamespaceBO namespaceBO = namespaceBranchService.findBranch(appId, Env.valueOf(model.getEnv()), namespaceBatchDTO.getClusterName(), namespaceObj);
+                        logger.info("namespaceBO: {}", JSONObject.toJSONString(namespaceBO));
+                        rayNamespaceDTO = namespaceBO.getBaseInfo();
+                    }
+
+                }catch (Exception e){
+                    logger.error("createBranch error: ", e);
+                    NamespaceBO namespaceBO = namespaceBranchService.findBranch(appId, Env.valueOf(model.getEnv()), namespaceBatchDTO.getClusterName(), namespaceObj);
+                    logger.info("namespaceBO: {}", JSONObject.toJSONString(namespaceBO));
+                    rayNamespaceDTO = namespaceBO.getBaseInfo();
+                }
+
+
+                logger.info("rayNamespaceDTO: {}", JSONObject.toJSONString(rayNamespaceDTO));
+
+                OpenGrayReleaseRuleDTO rules = new OpenGrayReleaseRuleDTO();
+                rules.setAppId(appId);
+                rules.setClusterName(namespaceBatchDTO.getClusterName());
+                rules.setNamespaceName(namespaceObj);
+                rules.setBranchName(rayNamespaceDTO.getClusterName());
+
+
+                Set<OpenGrayReleaseRuleItemDTO> ruleItems = Sets.newHashSet();
+                OpenGrayReleaseRuleItemDTO openGrayReleaseRuleItemDTO = new OpenGrayReleaseRuleItemDTO();
+                openGrayReleaseRuleItemDTO.setClientAppId(appId);
+                openGrayReleaseRuleItemDTO.setClientIpList(Sets.newHashSet(rayRules.split(",")));
+                ruleItems.add(openGrayReleaseRuleItemDTO);
+
+                rules.setRuleItems(ruleItems);
+
+                //create rule
+                try{
+                    GrayReleaseRuleDTO grayReleaseRuleDTO = OpenApiBeanUtils.transformToGrayReleaseRuleDTO(rules);
+                    namespaceBranchService
+                            .updateBranchGrayRules(appId, Env.valueOf(model.getEnv()), namespaceBatchDTO.getClusterName(), namespaceObj, rayNamespaceDTO.getClusterName(), grayReleaseRuleDTO, userInfoHolder.getUser().getUserId());
+                }catch (Exception e){
+                    logger.error("updateBranchGrayRules error: ", e);
+                }
+
+                //create or update items
+                if(StringUtils.isNotBlank(itemArea)){
+                    String[] itemArray = itemArea.split("\n");
+
+                    errorResult = addOrUpdateItem(itemArray, model.getEnv(), rayNamespaceDTO.getClusterName(), namespaceObj, namespaceBatchDTO.getAppId(), opType, namespaceBatchDTO.getItemComment());
+                }else{
+                    errorResult.put("批量更新错误", "键值集合不能为空");
+                }
+
+            }
+        }
+
+        if (errorResult.size() > 0) {
+            throw new BadRequestException("入库失败，请检查:\r\n" + JSONObject.toJSONString(errorResult));
+        }
+
+        return ResponseEntity.ok().build();
+    }
+
+    private Multimap<String, String> addOrUpdateItem(String[] itemArray, String env, String clusterName, String nameSpaceName, String appId, String opType, String comment){
+        Multimap<String, String> errorResult = ArrayListMultimap.create();
+
+        for (String itemObj : itemArray) {
+            String[] itemKV = itemObj.split("=");
+
+            if (OpType.DEL.getName().equals(opType)) {
+                try {
+                    ItemDTO toDeleteItem = itemService.loadItem(Env.fromString(env), appId, clusterName, nameSpaceName, itemKV[0]);
+                    if (toDeleteItem == null) {
+                        //throw new BadRequestException("item not exists");
+                        continue;
+                    }
+
+                    itemService.deleteItem(Env.fromString(env), toDeleteItem.getId(), userInfoHolder.getUser().getUserId());
+                } catch (Exception e) {
+                    logger.error("batchWriteAndUpdateNamespaces del error", e);
+                }
+
+            } else if (OpType.AAM.getName().equals(opType)) {
+                OpenItemDTO item = new OpenItemDTO();
+
+                try {
+                    item.setKey(itemKV[0]);
+                    item.setValue(itemKV[1]);
+                    item.setComment(comment);
+                    item.setDataChangeLastModifiedBy(userInfoHolder.getUser().getUserId());
+
+                    ItemDTO toUpdateItem = itemService
+                            .loadItem(Env.fromString(env), appId, clusterName, nameSpaceName, item.getKey());
+                    //protect. only value,comment,lastModifiedBy can be modified
+                    toUpdateItem.setComment(item.getComment());
+                    toUpdateItem.setValue(item.getValue());
+                    toUpdateItem.setDataChangeLastModifiedBy(item.getDataChangeLastModifiedBy());
+
+                    itemService.updateItem(appId, Env.fromString(env), clusterName, nameSpaceName, toUpdateItem);
+                } catch (Throwable ex) {
+                    if (ex instanceof HttpStatusCodeException) {
+                        try {
+                            // not check createIfNotExists
+                            if (((HttpStatusCodeException) ex).getStatusCode().equals(HttpStatus.NOT_FOUND)) {
+                                ItemDTO toCreate = OpenApiBeanUtils.transformToItemDTO(item);
+
+                                //protect
+                                toCreate.setLineNum(0);
+                                toCreate.setId(0);
+                                toCreate.setDataChangeLastModifiedBy(userInfoHolder.getUser().getUserId());
+                                toCreate.setDataChangeCreatedBy(userInfoHolder.getUser().getUserId());
+                                toCreate.setDataChangeLastModifiedTime(null);
+                                toCreate.setDataChangeCreatedTime(null);
+
+                                itemService.createItem(appId, Env.fromString(env),
+                                        clusterName, nameSpaceName, toCreate);
+                            }
+                        } catch (Exception e) {
+                            errorResult.put(nameSpaceName, String.format("%s: %s", item.getKey(), item.getValue()));
+                        }
+
+                    } else {
+                        errorResult.put(nameSpaceName, String.format("%s: %s", item.getKey(), item.getValue()));
+                    }
+                }
+            } else {
+                throw new BadRequestException("请选择正确的操作类型");
+            }
+
+        }
+
+        return errorResult;
+    }
+
+    @PreAuthorize(value = "@permissionValidator.isSuperAdmin()")
     @PostMapping("/apps/{appId}/batchWriteAndUpdateNamespaces")
     public ResponseEntity<Void> batchWriteAndUpdateNamespaces(@PathVariable String appId,
                                                               @RequestBody List<NamespaceBatchModel> models) {
@@ -218,149 +453,123 @@ public class NamespaceController {
         Multimap<String, String> errorResult = ArrayListMultimap.create();
 
         for (NamespaceBatchModel model : models) {
-            NamespaceBatchDTO namespaceBatchDTO = null;
+            NamespaceBatchDTO namespaceBatchDTO = model.getNamespace();
             String namespaceArea = null;
             String itemArea = null;
 
-            namespaceBatchDTO = model.getNamespace();
-
             namespaceArea = namespaceBatchDTO.getNamespaceArea();
             itemArea = namespaceBatchDTO.getItemArea();
+
             String opType = namespaceBatchDTO.getOpType();
 
             String[] namespaceArray = namespaceArea.split("\n");
-            String[] itemArray = itemArea.split("\n");
-            for (String namespaceObj : namespaceArray) {
 
-                if (!permissionValidator.hasModifyNamespacePermission(appId, namespaceObj, model.getEnv())) {
-                    errorResult.put("无Namespace修改权限", String.format("%s, %s, %s", appId, namespaceObj, model.getEnv()));
-                    continue;
-                }
+            if(OpType.ORI_RELEASE.getName().equals(opType)){
+                for(String namespaceName: namespaceArray){
+                    try {
+                        NamespaceReleaseModel modelItem = new NamespaceReleaseModel();
 
-                for (String itemObj : itemArray) {
-                    String[] itemKV = itemObj.split("=");
+                        modelItem.setAppId(appId);
+                        modelItem.setEnv(model.getEnv());
+                        modelItem.setClusterName(namespaceBatchDTO.getClusterName());
+                        modelItem.setNamespaceName(namespaceName);
 
-                    if (OpType.DEL.getName().equals(opType)) {
-                        try {
-                            ItemDTO toDeleteItem = itemService.loadItem(Env.fromString(model.getEnv()), appId, namespaceBatchDTO.getClusterName(), namespaceObj, itemKV[0]);
-                            if (toDeleteItem == null) {
-                                //throw new BadRequestException("item not exists");
-                                continue;
-                            }
 
-                            itemService.deleteItem(Env.fromString(model.getEnv()), toDeleteItem.getId(), userInfoHolder.getUser().getUserId());
-                        } catch (Exception e) {
-                            logger.error("batchWriteAndUpdateNamespaces del error", e);
-                        }
+                        ReleaseDTO createdRelease = releaseService.publish(modelItem);
 
-                    } else if (OpType.AAM.getName().equals(opType)) {
-                        OpenItemDTO item = new OpenItemDTO();
+                        ConfigPublishEvent event = ConfigPublishEvent.instance();
+                        event.withAppId(appId)
+                                .withCluster(namespaceBatchDTO.getClusterName())
+                                .withNamespace(namespaceName)
+                                .withReleaseId(createdRelease.getId())
+                                .setNormalPublishEvent(true)
+                                .setEnv(Env.valueOf(model.getEnv()));
 
-                        try {
-                            item.setKey(itemKV[0]);
-                            item.setValue(itemKV[1]);
-                            item.setComment(namespaceBatchDTO.getItemComment());
-                            item.setDataChangeLastModifiedBy(userInfoHolder.getUser().getUserId());
+                        publisher.publishEvent(event);
+                    } catch (Exception e) {
+                        logger.error("batchReleaseNamespaces error: ", e);
 
-                            ItemDTO toUpdateItem = itemService
-                                    .loadItem(Env.fromString(model.getEnv()), appId, namespaceBatchDTO.getClusterName(), namespaceObj, item.getKey());
-                            //protect. only value,comment,lastModifiedBy can be modified
-                            toUpdateItem.setComment(item.getComment());
-                            toUpdateItem.setValue(item.getValue());
-                            toUpdateItem.setDataChangeLastModifiedBy(item.getDataChangeLastModifiedBy());
-
-                            itemService.updateItem(appId, Env.fromString(model.getEnv()), namespaceBatchDTO.getClusterName(), namespaceObj, toUpdateItem);
-                        } catch (Throwable ex) {
-                            if (ex instanceof HttpStatusCodeException) {
-                                try {
-                                    // not check createIfNotExists
-                                    if (((HttpStatusCodeException) ex).getStatusCode().equals(HttpStatus.NOT_FOUND)) {
-                                        ItemDTO toCreate = OpenApiBeanUtils.transformToItemDTO(item);
-
-                                        //protect
-                                        toCreate.setLineNum(0);
-                                        toCreate.setId(0);
-                                        toCreate.setDataChangeLastModifiedBy(userInfoHolder.getUser().getUserId());
-                                        toCreate.setDataChangeCreatedBy(userInfoHolder.getUser().getUserId());
-                                        toCreate.setDataChangeLastModifiedTime(null);
-                                        toCreate.setDataChangeCreatedTime(null);
-
-                                        itemService.createItem(appId, Env.fromString(model.getEnv()),
-                                                namespaceBatchDTO.getClusterName(), namespaceObj, toCreate);
-                                    }
-                                } catch (Exception e) {
-                                    errorResult.put(namespaceObj, String.format("%s: %s", item.getKey(), item.getValue()));
-                                }
-
-                            } else {
-                                errorResult.put(namespaceObj, String.format("%s: %s", item.getKey(), item.getValue()));
-                            }
-                        }
-                    } else {
-                        throw new BadRequestException("请选择正确的操作类型");
+                        errorResult.put("批量发布错误", String.format("%s, %s, %s, %s", appId, model.getEnv(), namespaceBatchDTO.getClusterName(), namespaceName));
                     }
+                }
+            }else{
+                if(StringUtils.isBlank(itemArea)){
+                    errorResult.put("批量发布错误", "键值集合不可为空");
+                }else{
+                    String[] itemArray = itemArea.split("\n");
+                    for (String namespaceObj : namespaceArray) {
 
+                        if (!permissionValidator.hasModifyNamespacePermission(appId, namespaceObj, model.getEnv())) {
+                            errorResult.put("无Namespace修改权限", String.format("%s, %s, %s", appId, namespaceObj, model.getEnv()));
+                            continue;
+                        }
+
+                        //String[] itemArray, String env, String clusterName, String nameSpaceName, String appId, String opType, String comment
+                        errorResult = addOrUpdateItem(itemArray, model.getEnv(), namespaceBatchDTO.getClusterName(), namespaceObj, namespaceBatchDTO.getAppId(), opType, namespaceBatchDTO.getItemComment());
+
+                    }
                 }
 
             }
+
         }
 
         if (errorResult.size() > 0) {
-            throw new BadRequestException("以下数据入库失败，请检查:\r\n" + JSONObject.toJSONString(errorResult));
+            throw new BadRequestException("入库失败，请检查:\r\n" + JSONObject.toJSONString(errorResult));
         }
 
         return ResponseEntity.ok().build();
     }
 
-    @PreAuthorize(value = "@permissionValidator.isSuperAdmin()")
-    @GetMapping("/apps/{appId}/envs/{env}/clusters/{clusterName}/batchReleaseNamespaces")
-    public ResponseEntity<Void> batchReleaseNamespaces(@PathVariable String appId,
-                                                       @PathVariable String clusterName, @PathVariable String env) {
-
-        List<NamespaceDTO> namespaceDTOList = namespaceService.findWaitforRelease(appId, Env.fromString(env), clusterName);
-
-        Set<String> errorResult = Sets.newHashSet();
-
-        if (org.apache.commons.collections4.CollectionUtils.isNotEmpty(namespaceDTOList)) {
-            for (NamespaceDTO namespaceDTO : namespaceDTOList) {
-                try {
-                    NamespaceReleaseModel model = new NamespaceReleaseModel();
-
-                    model.setAppId(appId);
-                    model.setEnv(env);
-                    model.setClusterName(clusterName);
-                    model.setNamespaceName(namespaceDTO.getNamespaceName());
-
-//                    if (model.isEmergencyPublish() && !portalConfig.isEmergencyPublishAllowed(Env.valueOf(env))) {
-//                        throw new BadRequestException(String.format("Env: %s is not supported emergency publish now", env));
-//                    }
-
-                    ReleaseDTO createdRelease = releaseService.publish(model);
-
-                    ConfigPublishEvent event = ConfigPublishEvent.instance();
-                    event.withAppId(appId)
-                            .withCluster(clusterName)
-                            .withNamespace(namespaceDTO.getNamespaceName())
-                            .withReleaseId(createdRelease.getId())
-                            .setNormalPublishEvent(true)
-                            .setEnv(Env.valueOf(env));
-
-                    publisher.publishEvent(event);
-                } catch (Exception e) {
-                    logger.error("batchReleaseNamespaces error: ", e);
-
-                    errorResult.add(String.format("%s, %s, %s, %s", appId, env, clusterName, namespaceDTO.getNamespaceName()));
-                }
-            }
-
-        }
-
-        if(errorResult.size() > 0){
-            throw new BadRequestException("发布失败, 可能是权限问题, 请联系后台人员:\r\n" + JSONObject.toJSONString(errorResult));
-        }
-
-        return ResponseEntity.ok().build();
-    }
+//    @PreAuthorize(value = "@permissionValidator.isSuperAdmin()")
+//    @GetMapping("/apps/{appId}/envs/{env}/clusters/{clusterName}/batchReleaseNamespaces")
+//    public ResponseEntity<Void> batchReleaseNamespaces(@PathVariable String appId,
+//                                                       @PathVariable String clusterName, @PathVariable String env) {
+//
+//        List<NamespaceDTO> namespaceDTOList = namespaceService.findWaitforRelease(appId, Env.fromString(env), clusterName);
+//
+//        Set<String> errorResult = Sets.newHashSet();
+//
+//        if (org.apache.commons.collections4.CollectionUtils.isNotEmpty(namespaceDTOList)) {
+//            for (NamespaceDTO namespaceDTO : namespaceDTOList) {
+//                try {
+//                    NamespaceReleaseModel model = new NamespaceReleaseModel();
+//
+//                    model.setAppId(appId);
+//                    model.setEnv(env);
+//                    model.setClusterName(clusterName);
+//                    model.setNamespaceName(namespaceDTO.getNamespaceName());
+//
+////                    if (model.isEmergencyPublish() && !portalConfig.isEmergencyPublishAllowed(Env.valueOf(env))) {
+////                        throw new BadRequestException(String.format("Env: %s is not supported emergency publish now", env));
+////                    }
+//
+//                    ReleaseDTO createdRelease = releaseService.publish(model);
+//
+//                    ConfigPublishEvent event = ConfigPublishEvent.instance();
+//                    event.withAppId(appId)
+//                            .withCluster(clusterName)
+//                            .withNamespace(namespaceDTO.getNamespaceName())
+//                            .withReleaseId(createdRelease.getId())
+//                            .setNormalPublishEvent(true)
+//                            .setEnv(Env.valueOf(env));
+//
+//                    publisher.publishEvent(event);
+//                } catch (Exception e) {
+//                    logger.error("batchReleaseNamespaces error: ", e);
+//
+//                    errorResult.add(String.format("%s, %s, %s, %s", appId, env, clusterName, namespaceDTO.getNamespaceName()));
+//                }
+//            }
+//
+//        }
+//
+//        if(errorResult.size() > 0){
+//            throw new BadRequestException("发布失败, 可能是权限问题, 请联系后台人员:\r\n" + JSONObject.toJSONString(errorResult));
+//        }
+//
+//        return ResponseEntity.ok().build();
+//    }
 
     @PreAuthorize(value = "@permissionValidator.hasDeleteNamespacePermission(#appId)")
     @DeleteMapping("/apps/{appId}/envs/{env}/clusters/{clusterName}/namespaces/{namespaceName:.+}")

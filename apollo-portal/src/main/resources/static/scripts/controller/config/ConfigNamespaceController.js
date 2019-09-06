@@ -1,9 +1,9 @@
 application_module.controller("ConfigNamespaceController",
-                              ['$rootScope', '$scope', 'toastr', 'AppUtil', '$location', 'EventManager', 'ConfigService',
+                              ['$rootScope', '$scope', '$window', 'toastr', 'AppUtil', '$location', 'EventManager', 'ConfigService',
                                'PermissionService', 'UserService', 'NamespaceBranchService', 'NamespaceService',
                                controller]);
 
-function controller($rootScope, $scope, toastr, AppUtil, $location, EventManager, ConfigService,
+function controller($rootScope, $scope, $window, toastr, AppUtil, $location, EventManager, ConfigService,
                     PermissionService, UserService, NamespaceBranchService, NamespaceService) {
 
     $scope.rollback = rollback;
@@ -42,6 +42,11 @@ function controller($rootScope, $scope, toastr, AppUtil, $location, EventManager
 
                 toastr.success("一键发布成功");
 
+                setInterval(function () {
+                    $window.location.href =
+                        '/config.html?#/appid=' + $rootScope.pageContext.appId;
+                    $window.location.reload();
+                }, 1000);
             }, function (result) {
                 toastr.error(AppUtil.errorMsg(result), "一键发布失败");
             });

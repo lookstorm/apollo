@@ -15,6 +15,11 @@ appService.service("NamespaceService", ['$resource', '$q', function ($resource, 
             url: '/apps/:appId/batchWriteAndUpdateNamespaces',
             isArray: false
         },
+        batchWriteAndUpdateNamespaces4Ray: {
+            method: 'POST',
+            url: '/apps/:appId/batchWriteAndUpdateNamespaces4Ray',
+            isArray: false
+        },
         createAppNamespace: {
             method: 'POST',
             url: '/apps/:appId/appnamespaces?appendNamespacePrefix=:appendNamespacePrefix',
@@ -68,6 +73,18 @@ appService.service("NamespaceService", ['$resource', '$q', function ($resource, 
     function batchWriteAndUpdateNamespaces(appId, namespaceBatchModel) {
         var d = $q.defer();
         namespace_source.batchWriteAndUpdateNamespaces({
+            appId: appId
+        }, namespaceBatchModel, function (result) {
+            d.resolve(result);
+        }, function (result) {
+            d.reject(result);
+        });
+        return d.promise;
+    }
+
+    function batchWriteAndUpdateNamespaces4Ray(appId, namespaceBatchModel) {
+        var d = $q.defer();
+        namespace_source.batchWriteAndUpdateNamespaces4Ray({
             appId: appId
         }, namespaceBatchModel, function (result) {
             d.resolve(result);
@@ -179,7 +196,8 @@ appService.service("NamespaceService", ['$resource', '$q', function ($resource, 
         getPublicAppNamespaceAllNamespaces: getPublicAppNamespaceAllNamespaces,
         loadAppNamespace: loadAppNamespace,
         deleteAppNamespace: deleteAppNamespace,
-        batchWriteAndUpdateNamespaces: batchWriteAndUpdateNamespaces
+        batchWriteAndUpdateNamespaces: batchWriteAndUpdateNamespaces,
+        batchWriteAndUpdateNamespaces4Ray: batchWriteAndUpdateNamespaces4Ray
     }
 
 }]);

@@ -1,4 +1,4 @@
-items_module.controller('ItemsController',
+ray_items_module.controller('ItemsRayController',
                           ['$scope', '$location', '$window', 'toastr', 'AppService', 'EnvService', 'NamespaceService',
                            'AppUtil',
                            function ($scope, $location, $window, toastr, AppService, EnvService, NamespaceService,
@@ -25,18 +25,18 @@ items_module.controller('ItemsController',
                                $scope.clusterName = '';
                                $scope.unray = true;
 
-                               var publicOpType = [{"id": "-1", "text": "请选择"}, {"id": "aam", "text": "修改+新增"}, {"id": "del", "text": "删除"}, {"id": "main_release", "text": "批量发布"}];
+                               var publicOpType1 = [{"id": "-1", "text": "请选择"},{"id": "aam", "text": "修改+新增灰度配置"}, {"id": "del", "text": "删除灰度键值对"}, {"id": "ray_release", "text": "灰度发布"}, {"id": "all_release", "text": "全量发布"}];
                                $('#opType').select2({
                                    placeholder: '请选择操作类型',
                                    width: '100%',
-                                   data: publicOpType
-                               }).val("-1").trigger('change');
+                                   data: publicOpType1
+                               }).val("-1").trigger("change");
 
                                $("#opType").val("-1").trigger("change");
 
                                $("#opType").on("select2:select",function(){
                                    var data = $(this).val();
-                                   if(data=="main_release"){
+                                   if(data=="ray_release" || data=="all_release"){
                                        $scope.unray = false
                                    }else{
                                        $scope.unray = true
@@ -71,7 +71,8 @@ items_module.controller('ItemsController',
                                    console.log($scope.itemArea)
                                    console.log($scope.appId)
                                    console.log(selectedClusters)
-                                   console.log($scope.opType)
+                                   console.log($("#opType").val())
+                                   console.log($scope.RayRules)
 
                                    var namespaceBatchModel = [];
                                    selectedClusters.forEach(function (cluster) {
@@ -83,12 +84,13 @@ items_module.controller('ItemsController',
                                                itemArea: $scope.itemArea,
                                                clusterName: cluster.clusterName,
                                                itemComment: $scope.itemComment,
-                                               opType: $("#opType").val()
+                                               opType: $("#opType").val(),
+                                               RayRules:  $scope.RayRules
                                            }
                                        });
                                    });
 
-                                   NamespaceService.batchWriteAndUpdateNamespaces($scope.appId, namespaceBatchModel)
+                                   NamespaceService.batchWriteAndUpdateNamespaces4Ray($scope.appId, namespaceBatchModel)
                                        .then(function (result) {
                                            toastr.success("操作成功");
                                            $scope.step = 2;

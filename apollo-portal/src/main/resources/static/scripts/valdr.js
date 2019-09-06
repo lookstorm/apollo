@@ -110,11 +110,6 @@ items_module.config(function (valdrProvider) {
                 'required': {
                     'message': 'Namespace集合不能为空'
                 }
-            },
-            'itemArea': {
-                'required': {
-                    'message': '键值对集合不能为空'
-                }
             }
         }
     })

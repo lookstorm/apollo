@@ -30,6 +30,8 @@ var role_module = angular.module('role', ['app.service', 'apollo.directive', 'ap
 var cluster_module = angular.module('cluster', ['app.service', 'apollo.directive', 'app.util', 'toastr', 'angular-loading-bar' , 'valdr']);
 //items
 var items_module = angular.module('items', ['app.service', 'apollo.directive', 'app.util', 'toastr', 'angular-loading-bar' , 'valdr']);
+//ray items
+var ray_items_module = angular.module('ray_items', ['app.service', 'apollo.directive', 'app.util', 'toastr', 'angular-loading-bar' , 'valdr']);
 //release history
 var release_history_module = angular.module('release_history', ['app.service', 'apollo.directive', 'app.util', 'toastr', 'angular-loading-bar']);
 //open manage

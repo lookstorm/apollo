@@ -36,12 +36,12 @@ public class NamespaceReleaseModel implements Verifiable {
     this.env = env;
   }
 
-  public String getClusterName() {
-    return clusterName;
-  }
-
   public void setClusterName(String clusterName) {
     this.clusterName = clusterName;
+  }
+
+  public String getClusterName() {
+    return clusterName;
   }
 
   public String getNamespaceName() {
